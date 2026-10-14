@@ -156,6 +156,7 @@ func reconnectSession(roomID string, color string) {
 	game = chess.NewGame()
 	lastMove = nil
 	updateMoveList()
+	updateCapturedPieces()
 
 	loc := js.Global().Get("location")
 	connect(loc.Get("host").String(), roomID, loc.Get("protocol").String() == "https:")

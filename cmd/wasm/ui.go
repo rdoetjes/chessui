@@ -41,6 +41,7 @@ func registerEvents() {
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 		sendUCI("ucinewgame")
 		updateMoveList()
+		updateCapturedPieces()
 		handleBotTurn()
 		return nil
 	}))
