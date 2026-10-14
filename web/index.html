@@ -3,15 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grandmaster Chess</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Grandmaster Chess (v3.4)</title>
+    <link rel="stylesheet" href="style.css"> <!-- Reverted to style.css for assets -->
     <script src="wasm_exec.js"></script>
+    <style>
+        /* VERSION 3.5 - LAYOUT FIX */
+        body { 
+            background-color: #1a1a1a !important; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #wasm-status { 
+            padding: 8px; 
+            background: #4b0082; /* KEEP THE PURPLE BUT ONLY FOR THE BAR */
+            color: #ffeb3b; 
+            font-size: 0.9rem; 
+            text-align: center;
+            border-bottom: 2px solid #4CAF50;
+            font-weight: bold;
+            flex-shrink: 0;
+            z-index: 999;
+        }
+        #app {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
+    <div id="wasm-status">WASM v3.5: LOADING...</div>
     <div id="app">
         <div class="sidebar left-sidebar">
             <div class="panel">
-                <h2>Settings</h2>
+                <h2 style="color: #4CAF50;">Settings (v3.3)</h2>
                 <div class="control-group">
                     <label>Style</label>
                     <select id="style-select">
@@ -132,21 +161,23 @@
 
         <div class="sidebar right-sidebar">
             <div class="panel">
-                <h2>Analysis</h2>
-                <div id="move-list">
-                    <!-- Moves will be populated here -->
-                </div>
-                <div id="engine-info">
-                    Waiting for engine...
-                </div>
+                <h2>Analysis (v3.3 - Purple)</h2>
+                <div id="move-list"></div>
+                <div id="engine-suggestion" class="suggestion-text"></div>
+                <div id="engine-info" class="small-text"></div>
             </div>
         </div>
     </div>
     <script>
         const go = new Go();
-        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
-            go.run(result.instance);
-        });
+        const v = "3.6-" + new Date().getTime();
+        console.log("WASM: Fetching v3.6 logic...");
+        fetch("main.wasm?v=" + v)
+            .then(response => WebAssembly.instantiateStreaming(response, go.importObject))
+            .then((result) => {
+                console.log("WASM: v3.6 Loaded successfully");
+                go.run(result.instance);
+            });
     </script>
 </body>
 </html>

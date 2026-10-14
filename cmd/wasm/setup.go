@@ -48,7 +48,7 @@ func handleSetupToggle() {
 		turn := doc.Call("getElementById", "turn-select").Get("value").String()
 		f, _ := chess.FEN(generateFEN(setupMap, turn))
 		game = chess.NewGame(f)
-		sendMoveToStockfish()
+		handleBotTurn()
 		updateMoveList()
 	}
 }

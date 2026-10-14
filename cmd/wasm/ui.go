@@ -41,6 +41,7 @@ func registerEvents() {
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 		sendUCI("ucinewgame")
 		updateMoveList()
+		handleBotTurn()
 		return nil
 	}))
 
@@ -74,7 +75,7 @@ func registerEvents() {
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 		updateMoveList()
-		sendMoveToStockfish() // Update engine with new position
+		handleBotTurn() // Update engine with new position
 		return nil
 	}))
 
@@ -96,14 +97,11 @@ func registerEvents() {
 
 	doc.Call("getElementById", "game-mode").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
 		mode := this.Get("value").String()
-		btns := doc.Call("getElementById", "multiplayer-buttons")
-		if mode == "human" {
-			btns.Get("classList").Call("remove", "hidden")
-			isMultiplayer = true
-		} else {
-			btns.Get("classList").Call("add", "hidden")
-			isMultiplayer = false
+		if mode == "bot" {
 			reconnectSession("bot-play", "white")
+		} else {
+			// Show the Host/Join buttons
+			doc.Call("getElementById", "multiplayer-buttons").Get("classList").Call("remove", "hidden")
 		}
 		return nil
 	}))
@@ -179,9 +177,21 @@ func updateMoveList() {
 
 func loadAssets() {
 	pieces := []string{"wp", "wn", "wb", "wr", "wq", "wk", "bp", "bn", "bb", "br", "bq", "bk", "board"}
+	fmt.Printf("WASM: Loading %d assets for style %s...\n", len(pieces), currentStyle)
 	for _, p := range pieces {
 		img := js.Global().Get("Image").New()
-		img.Set("src", fmt.Sprintf("/assets/pieces/%s/%s.png", currentStyle, p))
+		src := fmt.Sprintf("/assets/pieces/%s/%s.png", currentStyle, p)
+		img.Set("src", src)
 		images[p] = img
+
+		// Add error logging for images
+		img.Set("onerror", js.FuncOf(func(this js.Value, args []js.Value) any {
+			fmt.Printf("WASM: Failed to load asset: %s\n", src)
+			return nil
+		}))
+		img.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) any {
+			// fmt.Printf("WASM: Loaded asset: %s\n", src)
+			return nil
+		}))
 	}
 }

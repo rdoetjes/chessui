@@ -1,7 +1,7 @@
 package uci
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -15,28 +15,32 @@ type Info struct {
 	BestMove string
 	Score    Score
 	Depth    int
+	HasScore bool
 }
 
 func ParseLine(line string) *Info {
 	info := &Info{}
-	parts := strings.Split(line, " ")
+	parts := strings.Fields(line)
 
-	if strings.HasPrefix(line, "bestmove") && len(parts) >= 2 {
+	if len(parts) >= 2 && parts[0] == "bestmove" {
 		info.BestMove = parts[1]
 		return info
 	}
 
-	for i, part := range parts {
-		if part == "score" && i+2 < len(parts) {
-			if parts[i+1] == "cp" {
-				fmt.Sscanf(parts[i+2], "%d", &info.Score.CP)
-			} else if parts[i+1] == "mate" {
-				fmt.Sscanf(parts[i+2], "%d", &info.Score.Mate)
-				info.Score.IsMate = true
-			}
-		}
-		if part == "depth" && i+1 < len(parts) {
-			fmt.Sscanf(parts[i+1], "%d", &info.Depth)
+	for i := 0; i < len(parts)-1; i++ {
+		switch parts[i] {
+		case "depth":
+			d, _ := strconv.Atoi(parts[i+1])
+			info.Depth = d
+		case "cp":
+			c, _ := strconv.Atoi(parts[i+1])
+			info.Score.CP = c
+			info.HasScore = true
+		case "mate":
+			m, _ := strconv.Atoi(parts[i+1])
+			info.Score.Mate = m
+			info.Score.IsMate = true
+			info.HasScore = true
 		}
 	}
 

@@ -25,7 +25,7 @@ type Config struct {
 type Room struct {
 	ID        string
 	Players   []*websocket.Conn
-	HostColor string // "white" or "black"
+	HostColor string
 	Stockfish *exec.Cmd
 	SFStdin   io.WriteCloser
 	SFStdout  io.ReadCloser
@@ -42,17 +42,12 @@ var (
 )
 
 func loadConfig() {
-	wd, _ := os.Getwd()
-	log.Printf("SERVER: Working directory: %s\n", wd)
-
+	config = Config{StockfishPath: "stockfish", Threads: 2, Depth: 15, Port: 8081}
 	file, err := os.Open("config.json")
-	if err != nil {
-		log.Printf("SERVER: Using defaults\n")
-		config = Config{StockfishPath: "stockfish", Threads: 2, Depth: 15, Port: 8081}
-		return
+	if err == nil {
+		json.NewDecoder(file).Decode(&config)
+		file.Close()
 	}
-	defer file.Close()
-	json.NewDecoder(file).Decode(&config)
 }
 
 func handleWS(w http.ResponseWriter, r *http.Request) {
@@ -69,16 +64,35 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	roomsMu.Lock()
 	room, exists := rooms[roomID]
 	if !exists {
-		room = &Room{ID: roomID, Players: []*websocket.Conn{}}
-		path, _ := exec.LookPath(config.StockfishPath)
+		path, err := exec.LookPath(config.StockfishPath)
+		if err != nil {
+			log.Printf("ERROR: Stockfish not found: %v\n", err)
+			return
+		}
 		cmd := exec.Command(path)
 		stdin, _ := cmd.StdinPipe()
 		stdout, _ := cmd.StdoutPipe()
-		cmd.Start()
-		room.Stockfish, room.SFStdin, room.SFStdout = cmd, stdin, stdout
+		if err := cmd.Start(); err != nil {
+			log.Printf("ERROR: Failed to start Stockfish: %v\n", err)
+			return
+		}
+		log.Printf("SERVER: Started Stockfish for room %s\n", roomID)
+		room = &Room{ID: roomID, Players: []*websocket.Conn{}, Stockfish: cmd, SFStdin: stdin, SFStdout: stdout}
 
 		go func(rm *Room) {
+			// Tell the client that Stockfish is starting
+			rm.Mutex.Lock()
+			for _, p := range rm.Players {
+				p.WriteMessage(websocket.TextMessage, []byte("info string Stockfish Engine Started"))
+			}
+			rm.Mutex.Unlock()
+
 			scanner := bufio.NewScanner(rm.SFStdout)
+			// Increase buffer size to handle long UCI info lines
+			const maxCapacity = 1 * 1024 * 1024 // 1MB
+			buf := make([]byte, maxCapacity)
+			scanner.Buffer(buf, maxCapacity)
+
 			for scanner.Scan() {
 				line := scanner.Text()
 				rm.Mutex.Lock()
@@ -95,32 +109,44 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	room.Mutex.Unlock()
 	roomsMu.Unlock()
 
+	writer := bufio.NewWriter(room.SFStdin)
+
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			break
 		}
 		msgStr := string(message)
-		room.Mutex.Lock()
 
-		if strings.HasPrefix(msgStr, "player_color ") {
-			room.HostColor = strings.TrimPrefix(msgStr, "player_color ")
-		} else if msgStr == "request_color" {
-			if room.HostColor != "" {
-				conn.WriteMessage(websocket.TextMessage, []byte("assign_color "+room.HostColor))
-			}
-		}
-
-		fmt.Fprintf(room.SFStdin, "%s\n", msgStr)
 		if strings.HasPrefix(msgStr, "move ") {
 			move := strings.TrimPrefix(msgStr, "move ")
+			room.Mutex.Lock()
 			for _, p := range room.Players {
 				if p != conn {
 					p.WriteMessage(websocket.TextMessage, []byte("opponent_move "+move))
 				}
 			}
+			room.Mutex.Unlock()
+		} else if strings.HasPrefix(msgStr, "player_color ") {
+			room.Mutex.Lock()
+			room.HostColor = strings.TrimPrefix(msgStr, "player_color ")
+			room.Mutex.Unlock()
+		} else if msgStr == "request_color" {
+			room.Mutex.Lock()
+			if room.HostColor != "" {
+				conn.WriteMessage(websocket.TextMessage, []byte("assign_color "+room.HostColor))
+			}
+			room.Mutex.Unlock()
+		} else {
+			// UCI command -> Flush to Stockfish
+			// We don't hold the room lock here to avoid deadlocks with the SFStdout reader
+			room.Mutex.Lock()
+			w := writer
+			room.Mutex.Unlock()
+
+			w.WriteString(msgStr + "\n")
+			w.Flush()
 		}
-		room.Mutex.Unlock()
 	}
 
 	room.Mutex.Lock()
@@ -129,6 +155,10 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 			room.Players = append(room.Players[:i], room.Players[i+1:]...)
 			break
 		}
+	}
+	if len(room.Players) == 0 {
+		room.Stockfish.Process.Kill()
+		delete(rooms, roomID)
 	}
 	room.Mutex.Unlock()
 }
@@ -145,9 +175,7 @@ func main() {
 	})
 	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	mux.HandleFunc("/ws", handleWS)
-	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(config)
-	})
+	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) { json.NewEncoder(w).Encode(config) })
 	log.Printf("SERVER: Listening on http://localhost:%d\n", config.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), mux)
 }

@@ -10,23 +10,27 @@ import (
 )
 
 var (
-	game          *chess.Game
-	boardCanvas   js.Value
-	ctx           js.Value
-	images        map[string]js.Value
-	selectedPos   chess.Square = chess.NoSquare
-	ws            js.Value
-	currentStyle  = "standard"
-	isWhite       = true
-	lastMove      *chess.Move
-	evalScore     float64      = 0.0
-	isGameOver                 = false
-	engineDepth                = 15
-	isSetupMode                = false
-	setupSquare   chess.Square = chess.NoSquare
-	setupMap      map[chess.Square]chess.Piece
-	isMultiplayer = false
-	playerColor   = chess.White
+	game           *chess.Game
+	boardCanvas    js.Value
+	ctx            js.Value
+	images         map[string]js.Value
+	selectedPos    chess.Square = chess.NoSquare
+	ws             js.Value
+	currentStyle   = "standard"
+	isWhite        = true
+	lastMove       *chess.Move
+	evalScore      float64      = 0.0
+	isGameOver                  = false
+	engineDepth                 = 15
+	isSetupMode                 = false
+	setupSquare    chess.Square = chess.NoSquare
+	setupMap       map[chess.Square]chess.Piece
+	isMultiplayer  = false
+	playerColor    = chess.White
+	playerColorMap = map[string]chess.Color{
+		"white": chess.White,
+		"black": chess.Black,
+	}
 )
 
 func main() {
@@ -35,8 +39,14 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Initializing Modular System...")
+	fmt.Println("WASM: Version 3.6 - CACHE BUSTER FINAL")
 
 	doc := js.Global().Get("document")
+	statusLine := doc.Call("getElementById", "wasm-status")
+	if !statusLine.IsNull() {
+		statusLine.Set("innerText", "WASM v3.6 - INITIALIZING...")
+	}
+
 	boardCanvas = doc.Call("getElementById", "chess-board")
 	ctx = boardCanvas.Call("getContext", "2d")
 
