@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandmaster Chess</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="wasm_exec.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div class="sidebar left-sidebar">
+            <div class="panel">
+                <h2>Settings</h2>
+                <div class="control-group">
+                    <label>Style</label>
+                    <select id="style-select">
+                        <option value="standard">Standard</option>
+                        <option value="classic">Classic</option>
+                        <option value="modern">Modern</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Bot Level (ELO)</label>
+                    <select id="elo-select">
+                        <option value="100">100-200</option>
+                        <option value="400">200-500</option>
+                        <option value="700">500-800</option>
+                        <option value="900">800-1000</option>
+                        <option value="1100">1000-1200</option>
+                        <option value="1300">1200-1400</option>
+                        <option value="1500">1400-1600</option>
+                        <option value="1900">1800-2000</option>
+                        <option value="2100">2000-2200</option>
+                        <option value="2400">2200-2600</option>
+                        <option value="2800">2600-3000</option>
+                    </select>
+                </div>
+                <div id="setup-controls" class="control-group hidden">
+                    <label>Whose Turn?</label>
+                    <select id="turn-select">
+                        <option value="w">White</option>
+                        <option value="b">Black</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Evaluation Bar</label>
+                    <label class="switch">
+                        <input type="checkbox" id="eval-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button id="new-game">New Game</button>
+                <button id="take-back">Take Back</button>
+                <button id="setup-board">Setup Board</button>
+            </div>
+            
+            <div id="checkmate-alert" class="alert hidden">
+                <h3>CHECKMATE</h3>
+                <p id="winner-text"></p>
+                <button onclick="document.getElementById('checkmate-alert').classList.add('hidden')">Close</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="game-container">
+                <div id="eval-bar-container">
+                    <div id="eval-black-text" class="eval-text top">0.0</div>
+                    <div id="eval-bar-background">
+                        <div id="eval-white-fill"></div>
+                    </div>
+                    <div id="eval-white-text" class="eval-text bottom">0.0</div>
+                </div>
+                <div id="board-wrapper">
+                    <canvas id="chess-board"></canvas>
+                    <div id="piece-picker" class="hidden">
+                        <div class="picker-grid">
+                            <!-- Pieces 32x32 will be here -->
+                        </div>
+                        <button id="close-picker">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar right-sidebar">
+            <div class="panel">
+                <h2>Analysis</h2>
+                <div id="move-list">
+                    <!-- Moves will be populated here -->
+                </div>
+                <div id="engine-info">
+                    Waiting for engine...
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
+</body>
+</html>
