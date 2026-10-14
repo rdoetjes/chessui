@@ -11,7 +11,7 @@ var currentMoveIndex int = 0
 
 // handleBotTurn is the ONLY place that tells the engine to start thinking.
 func handleBotTurn() {
-	if isMultiplayer || isSetupMode || isGameOver {
+	if isSetupMode || isGameOver {
 		return
 	}
 
@@ -21,7 +21,7 @@ func handleBotTurn() {
 	// 1. Force the engine to stop any previous analysis
 	sendUCI("stop")
 
-	// 2. Command the bot to find a move
+	// 2. Command the engine to find a move/suggestion
 	turn := game.Position().Turn()
 	currentFen := game.Position().String()
 
@@ -33,21 +33,32 @@ func handleBotTurn() {
 	sendUCI("position fen " + currentFen)
 	sendUCI("isready")
 
-	if turn != playerColor {
+	// In multiplayer, we always just analyze (no matter whose turn)
+	// In single player, we analyze on our turn and think on bot's turn
+	if isMultiplayer {
+		fmt.Printf("WASM: [ID:%d] Multiplayer Analysis. FEN: %s\n", myMoveIndex, currentFen)
+		sendUCI(fmt.Sprintf("go depth %d", engineDepth))
+	} else if turn != playerColor {
 		fmt.Printf("WASM: [ID:%d] BOT Turn. Thinking...\n", myMoveIndex)
 		sendUCI(fmt.Sprintf("go depth %d", engineDepth))
 	} else {
-		// Just run a search to update the eval bar during human turn
 		sendUCI(fmt.Sprintf("go depth %d", engineDepth))
 	}
 }
 
 // processBotResponse handles the 'bestmove' string from Stockfish.
 func processBotResponse(moveStr string) {
-	if isMultiplayer || isGameOver || moveStr == "(none)" {
+	if isGameOver || moveStr == "(none)" {
 		return
 	}
 
+	// MULTIPLAYER: Only use bestmove for suggestions, NEVER execute
+	if isMultiplayer {
+		lastHumanSuggestion = moveStr
+		return
+	}
+
+	// SINGLE PLAYER:
 	// If it's currently the human's turn, this is a background suggestion.
 	if game.Position().Turn() == playerColor {
 		lastHumanSuggestion = moveStr

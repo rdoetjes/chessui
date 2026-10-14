@@ -23,13 +23,11 @@ func executeMove(moveStr string, relay bool) {
 
 	// 2. If move is valid, apply it
 	if target != nil {
-		if relay {
-			// Show what the engine thought was best for the position we JUST left
-			if lastHumanSuggestion != "" {
-				showSuggestion("Best move was: " + lastHumanSuggestion)
-			}
-			lastHumanSuggestion = "" // Clear for next turn
+		// Show what the engine thought was best for the position we JUST left
+		if lastHumanSuggestion != "" {
+			showSuggestion("Best move was: " + lastHumanSuggestion)
 		}
+		lastHumanSuggestion = "" // Clear for next turn
 
 		// Trigger animation
 		animMove = target

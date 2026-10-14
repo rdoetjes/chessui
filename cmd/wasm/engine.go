@@ -21,11 +21,13 @@ func setupWebSocket() {
 
 	// FIX: Robust check for null/undefined/empty room parameter
 	isMultiplayer = false
+	multiplayerColor = "white"
 	if !roomParam.IsNull() && !roomParam.IsUndefined() {
 		val := roomParam.String()
 		if val != "" && val != "null" && val != "<null>" {
 			roomID = val
 			isMultiplayer = true
+			multiplayerColor = "auto"
 			fmt.Printf("WASM: Multiplayer Mode Active (Room: %s)\n", roomID)
 		}
 	}
@@ -50,9 +52,9 @@ func connect(host, roomID string, isSecure bool) {
 		statusLine := doc.Call("getElementById", "wasm-status")
 		if !statusLine.IsNull() {
 			if isMultiplayer {
-				statusLine.Set("innerText", "WASM v3.9 - MULTIPLAYER READY")
+				statusLine.Set("innerText", "WASM v4.0 - MULTIPLAYER READY")
 			} else {
-				statusLine.Set("innerText", "WASM v3.9 - BOT ACTIVE")
+				statusLine.Set("innerText", "WASM v4.0 - BOT ACTIVE")
 			}
 			statusLine.Get("style").Set("color", "#4CAF50")
 		}
@@ -62,7 +64,11 @@ func connect(host, roomID string, isSecure bool) {
 		sendUCI("ucinewgame")
 		sendUCI("isready")
 		if isMultiplayer {
-			sendUCI("request_color")
+			if multiplayerColor == "auto" {
+				sendUCI("request_color")
+			} else {
+				sendUCI("player_color " + multiplayerColor)
+			}
 		} else {
 			playerColor = chess.White
 		}
@@ -116,7 +122,7 @@ func processUCIResponse(msg string) {
 	}
 	if info.BestMove != "" {
 		fmt.Printf("WASM: BestMove received: %s\n", info.BestMove)
-		if !isMultiplayer && !isGameOver {
+		if !isGameOver {
 			processBotResponse(info.BestMove)
 		}
 	}
@@ -142,7 +148,15 @@ func reconnectSession(roomID string, color string) {
 	}
 	if color != "auto" {
 		playerColor = playerColorMap[color]
+		multiplayerColor = color
+	} else {
+		multiplayerColor = "auto"
 	}
+
+	game = chess.NewGame()
+	lastMove = nil
+	updateMoveList()
+
 	loc := js.Global().Get("location")
 	connect(loc.Get("host").String(), roomID, loc.Get("protocol").String() == "https:")
 }

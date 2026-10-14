@@ -31,6 +31,7 @@ var (
 		"white": chess.White,
 		"black": chess.Black,
 	}
+	multiplayerColor = "white"
 
 	// Animation State
 	animMove      *chess.Move
@@ -48,12 +49,12 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Initializing Modular System...")
-	fmt.Println("WASM: Version 3.9 - Training System Fixed")
+	fmt.Println("WASM: Version 4.1 - Multi-Training Active")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v3.9 - TRAINING SYSTEM FIXED")
+		statusLine.Set("innerText", "WASM v4.1 - MULTI-TRAINING ACTIVE")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")
