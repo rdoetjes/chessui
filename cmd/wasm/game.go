@@ -23,6 +23,9 @@ func executeMove(moveStr string, relay bool) {
 
 	// 2. If move is valid, apply it
 	if target != nil {
+		if isGameOver {
+			return
+		}
 		// Show what the engine thought was best for the position we JUST left
 		if lastHumanSuggestion != "" {
 			text := "Best move was: " + lastHumanSuggestion
@@ -64,6 +67,9 @@ func executeMove(moveStr string, relay bool) {
 }
 
 func handleBoardClick(col, row int) {
+	if isGameOver {
+		return
+	}
 	sq := chess.Square(row*8 + col)
 	fmt.Printf("WASM: Board Click: %s (col=%d, row=%d)\n", sq.String(), col, row)
 

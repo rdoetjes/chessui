@@ -49,13 +49,12 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Version 4.8 - High Visibility Status")
-	fmt.Println("WASM: Version 5.2 - Check Highlight Active")
+	fmt.Println("WASM: Version 5.3 - Checkmate Overlay Active")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v5.2 - CHECK HIGHLIGHT READY")
-		statusLine.Get("style").Set("color", "#ffffff")
+		statusLine.Set("innerText", "WASM v5.3 - CHECKMATE OVERLAY READY")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")

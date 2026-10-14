@@ -90,15 +90,17 @@ func drawBoard() {
 		ctx.Call("fillRect", x2, y2, tileSize, tileSize)
 	}
 
-	// Check highlight
-	if lastMove != nil && !isSetupMode && lastMove.HasTag(chess.Check) {
-		board := game.Position().Board()
-		turn := game.Position().Turn()
+	// Check / Checkmate highlight
+	pos := game.Position()
+	status := pos.Status()
+	if !isSetupMode && (status == chess.Checkmate || (lastMove != nil && lastMove.HasTag(chess.Check))) {
+		board := pos.Board()
+		turn := pos.Turn()
 		for i := 0; i < 64; i++ {
 			sq := chess.Square(i)
 			p := board.Piece(sq)
 			if p.Type() == chess.King && p.Color() == turn {
-				ctx.Set("fillStyle", "rgba(255, 0, 0, 0.5)") // Red highlight for King in check
+				ctx.Set("fillStyle", "rgba(255, 0, 0, 0.6)") // Slightly stronger red for mate
 				x, y := getXY(int(sq.File()), int(sq.Rank()), tileSize)
 				ctx.Call("fillRect", x, y, tileSize, tileSize)
 				break
@@ -151,6 +153,28 @@ func drawBoard() {
 				ctx.Call("fill")
 			}
 		}
+	}
+
+	// Game Over Overlay
+	if isGameOver {
+		ctx.Set("fillStyle", "rgba(0, 0, 0, 0.5)")
+		ctx.Call("fillRect", 0, 0, size, size)
+
+		ctx.Set("fillStyle", "white")
+		ctx.Set("textAlign", "center")
+		ctx.Set("font", "bold 60px Arial")
+
+		msg := "GAME OVER"
+		if game.Position().Status() == chess.Checkmate {
+			msg = "CHECKMATE"
+			ctx.Set("fillStyle", "#ff4444")
+		}
+
+		ctx.Call("fillText", msg, size/2, size/2)
+
+		ctx.Set("font", "bold 24px Arial")
+		ctx.Set("fillStyle", "white")
+		ctx.Call("fillText", "Outcome: "+game.Outcome().String(), size/2, size/2+40)
 	}
 }
 
