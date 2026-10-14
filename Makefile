@@ -9,7 +9,7 @@ all: build-wasm build-server
 build-wasm:
 	mkdir -p web
 	mkdir -p $(GOCACHE_LOCAL)
-	GOPATH=$(GOPATH_LOCAL) GOMODCACHE=$(GOMODCACHE_LOCAL) GOCACHE=$(GOCACHE_LOCAL) GOOS=js GOARCH=wasm go build -o web/main.wasm cmd/wasm/main.go
+	GOPATH=$(GOPATH_LOCAL) GOMODCACHE=$(GOMODCACHE_LOCAL) GOCACHE=$(GOCACHE_LOCAL) GOOS=js GOARCH=wasm go build -o web/main.wasm ./cmd/wasm
 
 build-server:
 	mkdir -p $(GOCACHE_LOCAL)

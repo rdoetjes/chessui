@@ -18,36 +18,32 @@ func main() {
 		pieces := []string{"wp", "wn", "wb", "wr", "wq", "wk", "bp", "bn", "bb", "br", "bq", "bk"}
 		for _, p := range pieces {
 			img := image.NewRGBA(image.Rect(0, 0, 128, 128))
-
-			// Background transparent
 			draw.Draw(img, img.Bounds(), &image.Uniform{color.Transparent}, image.Point{}, draw.Src)
 
 			isWhite := p[0] == 'w'
-			fillClr := color.RGBA{240, 240, 240, 255}
-			strokeClr := color.RGBA{0, 0, 0, 255}
+			fillClr := color.RGBA{255, 255, 255, 255}
+			borderClr := color.RGBA{0, 0, 0, 255}
 			if !isWhite {
-				fillClr = color.RGBA{45, 45, 45, 255}
-				strokeClr = color.RGBA{200, 200, 200, 255}
+				fillClr = color.RGBA{40, 40, 40, 255}
+				borderClr = color.RGBA{220, 220, 220, 255}
 			}
 
-			drawPiece(img, p[1], fillClr, strokeClr)
+			// Draw piece with border
+			drawPieceWithBorder(img, p[1], fillClr, borderClr)
 
 			f, _ := os.Create(filepath.Join(baseDir, p+".png"))
 			png.Encode(f, img)
 			f.Close()
 		}
 
-		// Generate board 4096x4096
+		// Generate board 4096x4096 - Neutral High Contrast
 		boardImg := image.NewRGBA(image.Rect(0, 0, 4096, 4096))
-		light := color.RGBA{235, 235, 210, 255} // Cream
-		dark := color.RGBA{115, 150, 85, 255}   // Greenish
+		light := color.RGBA{230, 230, 230, 255} // Light Grey
+		dark := color.RGBA{100, 100, 100, 255}  // Medium Grey
 
-		if style == "modern" {
-			light = color.RGBA{240, 241, 243, 255}
-			dark = color.RGBA{186, 202, 213, 255}
-		} else if style == "classic" {
-			light = color.RGBA{240, 217, 181, 255}
-			dark = color.RGBA{181, 136, 99, 255}
+		if style == "standard" {
+			light = color.RGBA{235, 236, 208, 255} // Classic Cream
+			dark = color.RGBA{119, 149, 86, 255}   // Classic Green
 		}
 
 		tileSize := 4096 / 8
@@ -61,57 +57,54 @@ func main() {
 				draw.Draw(boardImg, rect, &image.Uniform{c}, image.Point{}, draw.Src)
 			}
 		}
-
 		f, _ := os.Create(filepath.Join(baseDir, "board.png"))
 		png.Encode(f, boardImg)
 		f.Close()
 	}
 }
 
-func drawPiece(img *image.RGBA, typ byte, fill, stroke color.Color) {
+func drawPieceWithBorder(img *image.RGBA, typ byte, fill, border color.Color) {
+	// Simple border effect by drawing larger primitives first
+	drawPiece(img, typ, border, 3) // Border
+	drawPiece(img, typ, fill, 0)   // Interior
+}
+
+func drawPiece(img *image.RGBA, typ byte, c color.Color, offset int) {
 	switch typ {
-	case 'p': // Pawn
-		drawRect(img, 40, 100, 88, 115, fill) // Base
-		drawCircle(img, 64, 45, 25, fill)     // Head
-		drawRect(img, 54, 60, 74, 100, fill)  // Body
-	case 'r': // Rook
-		drawRect(img, 35, 95, 93, 115, fill) // Base
-		drawRect(img, 45, 45, 83, 95, fill)  // Body
-		drawRect(img, 35, 30, 93, 50, fill)  // Top
-		// Crenelations
-		drawRect(img, 35, 25, 45, 35, fill)
-		drawRect(img, 59, 25, 69, 35, fill)
-		drawRect(img, 83, 25, 93, 35, fill)
-	case 'n': // Knight
-		drawRect(img, 35, 95, 93, 115, fill) // Base
-		drawRect(img, 45, 50, 75, 95, fill)  // Neck
-		drawRect(img, 45, 35, 100, 65, fill) // Head
-		drawRect(img, 45, 25, 60, 40, fill)  // Ear
-	case 'b': // Bishop
-		drawRect(img, 35, 95, 93, 115, fill) // Base
-		drawCircle(img, 64, 55, 28, fill)    // Body/Head
-		drawCircle(img, 64, 25, 8, fill)     // Tip
-		drawRect(img, 54, 75, 74, 100, fill) // Neck
-	case 'q': // Queen
-		drawRect(img, 35, 95, 93, 115, fill) // Base
-		drawRect(img, 50, 50, 78, 100, fill) // Body
-		drawRect(img, 30, 35, 98, 55, fill)  // Crown base
-		drawCircle(img, 35, 30, 8, fill)     // Point 1
-		drawCircle(img, 64, 20, 8, fill)     // Point 2
-		drawCircle(img, 93, 30, 8, fill)     // Point 3
-	case 'k': // King
-		drawRect(img, 35, 95, 93, 115, fill) // Base
-		drawRect(img, 50, 50, 78, 100, fill) // Body
-		drawRect(img, 35, 35, 93, 55, fill)  // Crown base
-		drawRect(img, 60, 10, 68, 40, fill)  // Cross vertical
-		drawRect(img, 50, 20, 78, 28, fill)  // Cross horizontal
+	case 'p':
+		drawRect(img, 40-offset, 100-offset, 88+offset, 115+offset, c)
+		drawCircle(img, 64, 45, 25+offset, c)
+		drawRect(img, 54-offset, 60-offset, 74+offset, 100+offset, c)
+	case 'r':
+		drawRect(img, 35-offset, 95-offset, 93+offset, 115+offset, c)
+		drawRect(img, 45-offset, 45-offset, 83+offset, 95+offset, c)
+		drawRect(img, 35-offset, 30-offset, 93+offset, 50+offset, c)
+	case 'n':
+		drawRect(img, 35-offset, 95-offset, 93+offset, 115+offset, c)
+		drawRect(img, 45-offset, 50-offset, 75+offset, 95+offset, c)
+		drawRect(img, 45-offset, 35-offset, 100+offset, 65+offset, c)
+	case 'b':
+		drawRect(img, 35-offset, 95-offset, 93+offset, 115+offset, c)
+		drawCircle(img, 64, 55, 28+offset, c)
+		drawCircle(img, 64, 25, 8+offset, c)
+	case 'q':
+		drawRect(img, 35-offset, 95-offset, 93+offset, 115+offset, c)
+		drawRect(img, 50-offset, 50-offset, 78+offset, 100+offset, c)
+		drawCircle(img, 64, 30, 20+offset, c)
+	case 'k':
+		drawRect(img, 35-offset, 95-offset, 93+offset, 115+offset, c)
+		drawRect(img, 50-offset, 50-offset, 78+offset, 100+offset, c)
+		drawRect(img, 60-offset, 10-offset, 68+offset, 40+offset, c)
+		drawRect(img, 50-offset, 20-offset, 78+offset, 28+offset, c)
 	}
 }
 
 func drawRect(img *image.RGBA, x1, y1, x2, y2 int, c color.Color) {
 	for y := y1; y < y2; y++ {
 		for x := x1; x < x2; x++ {
-			img.Set(x, y, c)
+			if x >= 0 && x < 128 && y >= 0 && y < 128 {
+				img.Set(x, y, c)
+			}
 		}
 	}
 }
@@ -120,7 +113,9 @@ func drawCircle(img *image.RGBA, cx, cy, r int, c color.Color) {
 	for y := cy - r; y <= cy+r; y++ {
 		for x := cx - r; x <= cx+r; x++ {
 			if (x-cx)*(x-cx)+(y-cy)*(y-cy) <= r*r {
-				img.Set(x, y, c)
+				if x >= 0 && x < 128 && y >= 0 && y < 128 {
+					img.Set(x, y, c)
+				}
 			}
 		}
 	}
