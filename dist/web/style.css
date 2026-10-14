@@ -95,25 +95,40 @@ button:hover {
 
 .game-container {
     display: flex;
-    gap: 20px;
-    height: 80vh;
-    max-width: 100%;
+    gap: 30px;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#board-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    justify-content: center;
+    align-items: center;
 }
 
 #eval-bar-container {
-    width: 40px;
-    background-color: #222;
+    width: 30px;
+    background-color: #000; /* Black for Black's advantage */
     border-radius: 4px;
     overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
+    height: calc(60vh + 80px); /* Board + Captured Rows height */
+    max-height: calc(80vw + 80px);
+    border: 2px solid #444;
 }
 
 #eval-bar-background {
     flex: 1;
     width: 100%;
-    background-color: #222; /* Black's area (top) */
+    background-color: #000; 
     display: flex;
     flex-direction: column-reverse; /* White fills from bottom */
     position: relative;
@@ -122,26 +137,29 @@ button:hover {
 #eval-white-fill {
     width: 100%;
     height: 50%;
-    background-color: #eee; /* White's area (bottom) */
-    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #fff; /* White for White's advantage */
+    transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .eval-text {
     height: 30px;
     line-height: 30px;
     text-align: center;
-    font-size: 0.8rem;
-    font-weight: bold;
+    font-size: 0.75rem;
+    font-weight: 900;
     color: white;
-    background: #000;
+    z-index: 10;
 }
 
 #board-wrapper {
-    aspect-ratio: 1 / 1;
-    height: 100%;
+    width: 60vh; 
+    height: 60vh;
+    max-width: 80vw;
+    max-height: 80vw;
     position: relative;
     background-color: #333;
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    flex-shrink: 0;
 }
 
 canvas {

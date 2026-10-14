@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grandmaster Chess (v4.1)</title>
+    <title>Grandmaster Chess (v4.9)</title>
     <link rel="stylesheet" href="style.css">
     <script src="wasm_exec.js"></script>
     <style>
-        /* VERSION 4.1 - MULTI-TRAINING */
+        /* VERSION 4.9 - EVAL BAR FIX */
         body { 
             background-color: #1a1a1a !important; 
             margin: 0;
@@ -16,17 +16,20 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            color: #ffffff;
         }
         #wasm-status { 
-            padding: 8px; 
-            background: #4b0082; 
-            color: #ffeb3b; 
-            font-size: 0.9rem; 
+            height: 45px;
+            line-height: 45px;
+            background: #4b0082 !important; 
+            color: #ffffff !important; 
+            font-size: 1.1rem; 
             text-align: center;
-            border-bottom: 2px solid #4CAF50;
-            font-weight: bold;
+            border-bottom: 3px solid #4CAF50;
+            font-weight: 900;
+            text-shadow: 1px 1px 2px #000;
             flex-shrink: 0;
-            z-index: 999;
+            z-index: 9999;
         }
         #app {
             flex: 1;
@@ -36,11 +39,11 @@
     </style>
 </head>
 <body>
-    <div id="wasm-status">WASM v4.1: LOADING...</div>
+    <div id="wasm-status">WASM v4.9: LOADING...</div>
     <div id="app">
         <div class="sidebar left-sidebar">
             <div class="panel">
-                <h2 style="color: #4CAF50;">Settings (v4.1)</h2>
+                <h2 style="color: #4CAF50;">Settings (v4.9)</h2>
                 <div class="control-group">
                     <label>Style</label>
                     <select id="style-select">
@@ -147,13 +150,23 @@
                     </div>
                     <div id="eval-white-text" class="eval-text bottom">0.0</div>
                 </div>
-                <div id="board-wrapper">
-                    <canvas id="chess-board"></canvas>
-                    <div id="piece-picker" class="hidden">
-                        <div class="picker-grid">
-                            <!-- Pieces 32x32 will be here -->
+                <div id="board-layout">
+                    <div id="captured-top" class="captured-container">
+                        <div class="captured-pieces"></div>
+                        <div class="captured-score">+0</div>
+                    </div>
+                    <div id="board-wrapper">
+                        <canvas id="chess-board"></canvas>
+                        <div id="piece-picker" class="hidden">
+                            <div class="picker-grid">
+                                <!-- Pieces 32x32 will be here -->
+                            </div>
+                            <button id="close-picker">Cancel</button>
                         </div>
-                        <button id="close-picker">Cancel</button>
+                    </div>
+                    <div id="captured-bottom" class="captured-container">
+                        <div class="captured-pieces"></div>
+                        <div class="captured-score">+0</div>
                     </div>
                 </div>
             </div>
@@ -170,12 +183,12 @@
     </div>
     <script>
         const go = new Go();
-        const v = "4.1-" + new Date().getTime();
-        console.log("WASM: Fetching v4.1 logic...");
+        const v = "4.9-" + new Date().getTime();
+        console.log("WASM: Fetching v4.9 logic...");
         fetch("main.wasm?v=" + v)
             .then(response => WebAssembly.instantiateStreaming(response, go.importObject))
             .then((result) => {
-                console.log("WASM: v4.1 Loaded successfully");
+                console.log("WASM: v4.9 Loaded successfully");
                 go.run(result.instance);
             });
     </script>

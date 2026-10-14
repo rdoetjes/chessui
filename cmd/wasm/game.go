@@ -50,6 +50,7 @@ func executeMove(moveStr string, relay bool) {
 
 			// 4. Kick off the engine for the next turn
 			handleBotTurn()
+			updateCapturedPieces()
 		} else {
 			fmt.Printf("WASM: Move error: %v\n", err)
 		}

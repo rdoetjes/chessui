@@ -48,13 +48,14 @@ func main() {
 	images = make(map[string]js.Value)
 	setupMap = make(map[chess.Square]chess.Piece)
 
-	fmt.Println("WASM: Initializing Modular System...")
-	fmt.Println("WASM: Version 4.1 - Multi-Training Active")
+	fmt.Println("WASM: Version 4.8 - High Visibility Status")
+	fmt.Println("WASM: Version 4.9 - Eval Bar Fixed")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v4.1 - MULTI-TRAINING ACTIVE")
+		statusLine.Set("innerText", "WASM v4.9 - EVAL BAR READY")
+		statusLine.Get("style").Set("color", "#ffffff")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")
@@ -63,6 +64,7 @@ func main() {
 	setupWebSocket()
 	loadAssets()
 	registerEvents()
+	updateCapturedPieces()
 
 	requestAnimationFrame := js.Global().Get("requestAnimationFrame")
 	var render js.Func
