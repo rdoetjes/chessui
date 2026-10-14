@@ -53,6 +53,25 @@
                 <button id="new-game">New Game</button>
                 <button id="take-back">Take Back</button>
                 <button id="setup-board">Setup Board</button>
+                
+                <div class="panel multiplayer-panel">
+                    <h2>Multiplayer</h2>
+                    <div class="control-group">
+                        <label>Game Mode</label>
+                        <select id="game-mode">
+                            <option value="bot">Play vs Bot</option>
+                            <option value="human">Head to Head</option>
+                        </select>
+                    </div>
+                    <div id="session-controls" class="control-group hidden">
+                        <label>Session Code</label>
+                        <div class="input-row">
+                            <input type="text" id="session-code" placeholder="Enter Code">
+                            <button id="join-session">Join</button>
+                        </div>
+                        <p class="small-text">Share this code with your friend.</p>
+                    </div>
+                </div>
             </div>
             
             <div id="checkmate-alert" class="alert hidden">

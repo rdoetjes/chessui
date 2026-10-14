@@ -162,9 +162,35 @@ canvas {
     background: rgba(255, 235, 59, 0.1);
 }
 
-#setup-controls label {
-    color: #ffeb3b;
-    font-weight: bold;
+.multiplayer-panel {
+    margin-top: 20px;
+    border: 1px solid #555;
+}
+
+.input-row {
+    display: flex;
+    gap: 5px;
+}
+
+.input-row input {
+    flex: 1;
+    background: #111;
+    border: 1px solid #444;
+    color: white;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.input-row button {
+    margin-top: 0;
+    width: auto;
+    padding: 5px 10px;
+}
+
+.small-text {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 5px;
 }
 
 #piece-picker {

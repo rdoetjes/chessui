@@ -87,6 +87,29 @@ func registerEvents() {
 		return nil
 	}))
 
+	doc.Call("getElementById", "game-mode").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
+		mode := this.Get("value").String()
+		controls := doc.Call("getElementById", "session-controls")
+		if mode == "human" {
+			controls.Get("classList").Call("remove", "hidden")
+			isMultiplayer = true
+		} else {
+			controls.Get("classList").Call("add", "hidden")
+			isMultiplayer = false
+			// Reconnect to private session
+			reconnectSession("bot-play")
+		}
+		return nil
+	}))
+
+	doc.Call("getElementById", "join-session").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		code := doc.Call("getElementById", "session-code").Get("value").String()
+		if code != "" {
+			reconnectSession(code)
+		}
+		return nil
+	}))
+
 	initPiecePicker()
 }
 

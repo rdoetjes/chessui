@@ -10,21 +10,22 @@ import (
 )
 
 var (
-	game         *chess.Game
-	boardCanvas  js.Value
-	ctx          js.Value
-	images       map[string]js.Value
-	selectedPos  chess.Square = chess.NoSquare
-	ws           js.Value
-	currentStyle = "standard"
-	isWhite      = true
-	lastMove     *chess.Move
-	evalScore    float64      = 0.0
-	isGameOver                = false
-	engineDepth               = 15
-	isSetupMode               = false
-	setupSquare  chess.Square = chess.NoSquare
-	setupMap     map[chess.Square]chess.Piece
+	game          *chess.Game
+	boardCanvas   js.Value
+	ctx           js.Value
+	images        map[string]js.Value
+	selectedPos   chess.Square = chess.NoSquare
+	ws            js.Value
+	currentStyle  = "standard"
+	isWhite       = true
+	lastMove      *chess.Move
+	evalScore     float64      = 0.0
+	isGameOver                 = false
+	engineDepth                = 15
+	isSetupMode                = false
+	setupSquare   chess.Square = chess.NoSquare
+	setupMap      map[chess.Square]chess.Piece
+	isMultiplayer = false
 )
 
 func main() {
