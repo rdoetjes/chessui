@@ -25,6 +25,7 @@ type Config struct {
 type Room struct {
 	ID        string
 	Players   []*websocket.Conn
+	HostColor string // "white" or "black"
 	Stockfish *exec.Cmd
 	SFStdin   io.WriteCloser
 	SFStdout  io.ReadCloser
@@ -101,6 +102,15 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 		msgStr := string(message)
 		room.Mutex.Lock()
+
+		if strings.HasPrefix(msgStr, "player_color ") {
+			room.HostColor = strings.TrimPrefix(msgStr, "player_color ")
+		} else if msgStr == "request_color" {
+			if room.HostColor != "" {
+				conn.WriteMessage(websocket.TextMessage, []byte("assign_color "+room.HostColor))
+			}
+		}
+
 		fmt.Fprintf(room.SFStdin, "%s\n", msgStr)
 		if strings.HasPrefix(msgStr, "move ") {
 			move := strings.TrimPrefix(msgStr, "move ")

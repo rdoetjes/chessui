@@ -20,8 +20,15 @@ func registerEvents() {
 		y := event.Get("clientY").Float() - rect.Get("top").Float()
 		size := boardCanvas.Get("width").Float()
 		tileSize := size / 8
+
 		col := int(x / tileSize)
 		row := 7 - int(y/tileSize)
+
+		if playerColor == chess.Black {
+			col = 7 - col
+			row = 7 - row
+		}
+
 		handleBoardClick(col, row)
 		return nil
 	}))
@@ -89,24 +96,64 @@ func registerEvents() {
 
 	doc.Call("getElementById", "game-mode").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
 		mode := this.Get("value").String()
-		controls := doc.Call("getElementById", "session-controls")
+		btns := doc.Call("getElementById", "multiplayer-buttons")
 		if mode == "human" {
-			controls.Get("classList").Call("remove", "hidden")
+			btns.Get("classList").Call("remove", "hidden")
 			isMultiplayer = true
 		} else {
-			controls.Get("classList").Call("add", "hidden")
+			btns.Get("classList").Call("add", "hidden")
 			isMultiplayer = false
-			// Reconnect to private session
-			reconnectSession("bot-play")
+			reconnectSession("bot-play", "white")
 		}
 		return nil
 	}))
 
-	doc.Call("getElementById", "join-session").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
-		code := doc.Call("getElementById", "session-code").Get("value").String()
-		if code != "" {
-			reconnectSession(code)
+	// Host Game
+	doc.Call("getElementById", "btn-host-open").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		uuid := generateUUID()
+		doc.Call("getElementById", "host-uuid").Set("value", uuid)
+		doc.Call("getElementById", "popup-host").Get("classList").Call("remove", "hidden")
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-host-start").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		uuid := doc.Call("getElementById", "host-uuid").Get("value").String()
+		color := doc.Call("getElementById", "host-color").Get("value").String()
+		doc.Call("getElementById", "popup-host").Get("classList").Call("add", "hidden")
+		reconnectSession(uuid, color)
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-host-cancel").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		doc.Call("getElementById", "popup-host").Get("classList").Call("add", "hidden")
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-copy-uuid").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		uuid := doc.Call("getElementById", "host-uuid").Get("value").String()
+		js.Global().Get("navigator").Get("clipboard").Call("writeText", uuid)
+		return nil
+	}))
+
+	// Join Game
+	doc.Call("getElementById", "btn-join-open").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		doc.Call("getElementById", "popup-join").Get("classList").Call("remove", "hidden")
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-join-start").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		uuid := doc.Call("getElementById", "join-uuid").Get("value").String()
+		if uuid == "" {
+			return nil
 		}
+		doc.Call("getElementById", "popup-join").Get("classList").Call("add", "hidden")
+		// Join as "auto" - server or client will determine opposite color
+		reconnectSession(uuid, "auto")
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-join-cancel").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		doc.Call("getElementById", "popup-join").Get("classList").Call("add", "hidden")
 		return nil
 	}))
 

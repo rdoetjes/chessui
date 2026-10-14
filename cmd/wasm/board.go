@@ -8,6 +8,14 @@ import (
 	"github.com/notnil/chess"
 )
 
+func getXY(file, rank int, tileSize float64) (float64, float64) {
+	if playerColor == chess.White {
+		return float64(file) * tileSize, float64(7-rank) * tileSize
+	}
+	// Flip for Black
+	return float64(7-file) * tileSize, float64(rank) * tileSize
+}
+
 func drawBoard() {
 	rect := boardCanvas.Call("getBoundingClientRect")
 	w := rect.Get("width").Float()
@@ -27,9 +35,10 @@ func drawBoard() {
 	ctx.Set("fillStyle", "#000")
 	ctx.Call("fillRect", 0, 0, size, size)
 
-	// Draw squares (Neutral High Contrast Fallback)
+	// Draw squares
 	for y := 0; y < 8; y++ {
 		for x := 0; x < 8; x++ {
+			// Logical coordinates for square color
 			if (x+y)%2 != 0 {
 				ctx.Set("fillStyle", "#d1d1d1") // Light Grey
 			} else {
@@ -57,21 +66,25 @@ func drawBoard() {
 	// Move highlights
 	if lastMove != nil && !isSetupMode {
 		ctx.Set("fillStyle", "rgba(255, 255, 0, 0.2)")
-		ctx.Call("fillRect", float64(lastMove.S1().File())*tileSize, float64(7-lastMove.S1().Rank())*tileSize, tileSize, tileSize)
-		ctx.Call("fillRect", float64(lastMove.S2().File())*tileSize, float64(7-lastMove.S2().Rank())*tileSize, tileSize, tileSize)
+		x1, y1 := getXY(int(lastMove.S1().File()), int(lastMove.S1().Rank()), tileSize)
+		x2, y2 := getXY(int(lastMove.S2().File()), int(lastMove.S2().Rank()), tileSize)
+		ctx.Call("fillRect", x1, y1, tileSize, tileSize)
+		ctx.Call("fillRect", x2, y2, tileSize, tileSize)
 	}
 
 	// Legal move dots
 	if selectedPos != chess.NoSquare && !isSetupMode {
+		x, y := getXY(int(selectedPos.File()), int(selectedPos.Rank()), tileSize)
 		ctx.Set("fillStyle", "rgba(0, 255, 0, 0.3)")
-		ctx.Call("fillRect", float64(selectedPos.File())*tileSize, float64(7-selectedPos.Rank())*tileSize, tileSize, tileSize)
+		ctx.Call("fillRect", x, y, tileSize, tileSize)
 
 		ctx.Set("fillStyle", "rgba(255, 0, 0, 0.4)")
 		for _, m := range game.ValidMoves() {
 			if m.S1() == selectedPos {
 				s2 := m.S2()
-				centerX := float64(s2.File())*tileSize + tileSize/2
-				centerY := float64(7-s2.Rank())*tileSize + tileSize/2
+				targetX, targetY := getXY(int(s2.File()), int(s2.Rank()), tileSize)
+				centerX := targetX + tileSize/2
+				centerY := targetY + tileSize/2
 				ctx.Call("beginPath")
 				ctx.Call("arc", centerX, centerY, tileSize*0.15, 0, 2*math.Pi)
 				ctx.Call("fill")
@@ -101,14 +114,16 @@ func drawPieceAt(sq chess.Square, p chess.Piece, tileSize float64) {
 	}
 	pStr += pChar
 
+	x, y := getXY(int(sq.File()), int(sq.Rank()), tileSize)
+
 	if img, ok := images[pStr]; ok && img.Get("complete").Bool() && img.Get("naturalWidth").Int() > 0 {
-		ctx.Call("drawImage", img, float64(sq.File())*tileSize, float64(7-sq.Rank())*tileSize, tileSize, tileSize)
+		ctx.Call("drawImage", img, x, y, tileSize, tileSize)
 	} else {
 		ctx.Set("fillStyle", "white")
 		if p.Color() == chess.Black {
 			ctx.Set("fillStyle", "#aaa")
 		}
 		ctx.Set("font", "bold 30px Arial")
-		ctx.Call("fillText", pStr, float64(sq.File())*tileSize+tileSize/4, float64(7-sq.Rank())*tileSize+tileSize/1.5)
+		ctx.Call("fillText", pStr, x+tileSize/4, y+tileSize/1.5)
 	}
 }

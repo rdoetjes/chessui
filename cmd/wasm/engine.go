@@ -17,8 +17,11 @@ func setupWebSocket() {
 
 	params := js.Global().Get("URLSearchParams").New(loc.Get("search"))
 	roomID := params.Call("get", "room").String()
-	if roomID == "null" {
+	if roomID == "null" || roomID == "lobby" {
 		roomID = "lobby"
+		isMultiplayer = false
+	} else {
+		isMultiplayer = true
 	}
 
 	wsURL := "ws://" + host + "/ws?room=" + roomID
@@ -48,10 +51,25 @@ func setupWebSocket() {
 	}))
 }
 
-func reconnectSession(roomID string) {
+func reconnectSession(roomID string, color string) {
 	if ws.Get("readyState").Int() == 1 {
 		ws.Call("close")
 	}
+
+	// Mode assignment
+	if roomID == "bot-play" || roomID == "lobby" {
+		isMultiplayer = false
+	} else {
+		isMultiplayer = true
+	}
+
+	// Local color assignment
+	if color == "white" {
+		playerColor = chess.White
+	} else if color == "black" {
+		playerColor = chess.Black
+	}
+	// if "auto", we wait for the server/peer signal
 
 	loc := js.Global().Get("location")
 	host := loc.Get("host").String()
@@ -60,26 +78,39 @@ func reconnectSession(roomID string) {
 		wsURL = "wss://" + host + "/ws?room=" + roomID
 	}
 
-	fmt.Printf("WASM: Switching to Room %s\n", roomID)
-
-	doc := js.Global().Get("document")
-	infoPanel := doc.Call("getElementById", "engine-info")
-	infoPanel.Set("innerText", "Joining: "+roomID)
-
 	ws = js.Global().Get("WebSocket").New(wsURL)
 
 	ws.Set("onopen", js.FuncOf(func(this js.Value, args []js.Value) any {
-		fmt.Println("WASM: Connected to Session")
-		infoPanel.Set("innerText", "")
 		sendUCI("uci")
 		sendUCI("isready")
-		// Sync current board if we joined an existing game
+
+		// If we are hosting, signal our color to the server/other player
+		if color != "auto" {
+			sendUCI("player_color " + color)
+		} else {
+			// If we are joining, ask for the color state
+			sendUCI("request_color")
+		}
+
 		sendMoveToStockfish()
 		return nil
 	}))
 
 	ws.Set("onmessage", js.FuncOf(func(this js.Value, args []js.Value) any {
-		handleUCIResponse(args[0].Get("data").String())
+		msg := args[0].Get("data").String()
+
+		if strings.HasPrefix(msg, "assign_color ") {
+			c := strings.TrimPrefix(msg, "assign_color ")
+			if c == "white" {
+				playerColor = chess.Black
+			} else {
+				playerColor = chess.White
+			}
+			fmt.Printf("WASM: Auto-assigned color %s\n", playerColor.String())
+			return nil
+		}
+
+		handleUCIResponse(msg)
 		return nil
 	}))
 }

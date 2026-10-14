@@ -5,9 +5,19 @@ package main
 import (
 	"fmt"
 	"strings"
+	"syscall/js"
 
 	"github.com/notnil/chess"
 )
+
+func generateUUID() string {
+	const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+	b := make([]byte, 8)
+	for i := range b {
+		b[i] = chars[js.Global().Get("Math").Call("floor", js.Global().Get("Math").Call("random").Float()*float64(len(chars))).Int()]
+	}
+	return string(b)
+}
 
 func generateFEN(m map[chess.Square]chess.Piece, turn string) string {
 	fen := ""

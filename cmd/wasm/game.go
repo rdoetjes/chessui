@@ -15,9 +15,18 @@ func handleBoardClick(col, row int) {
 		js.Global().Get("document").Call("getElementById", "piece-picker").Get("classList").Call("remove", "hidden")
 		return
 	}
+
+	// Turn check
+	turn := game.Position().Turn()
+
+	// Enforcement for Multiplayer: Can only move pieces of your color
+	if isMultiplayer && turn != playerColor {
+		return
+	}
+
 	if selectedPos == chess.NoSquare {
 		p := game.Position().Board().Piece(sq)
-		if p != chess.NoPiece && p.Color() == game.Position().Turn() {
+		if p != chess.NoPiece && p.Color() == turn {
 			selectedPos = sq
 		}
 	} else {

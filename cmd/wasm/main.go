@@ -26,6 +26,7 @@ var (
 	setupSquare   chess.Square = chess.NoSquare
 	setupMap      map[chess.Square]chess.Piece
 	isMultiplayer = false
+	playerColor   = chess.White
 )
 
 func main() {
