@@ -90,6 +90,22 @@ func drawBoard() {
 		ctx.Call("fillRect", x2, y2, tileSize, tileSize)
 	}
 
+	// Check highlight
+	if lastMove != nil && !isSetupMode && lastMove.HasTag(chess.Check) {
+		board := game.Position().Board()
+		turn := game.Position().Turn()
+		for i := 0; i < 64; i++ {
+			sq := chess.Square(i)
+			p := board.Piece(sq)
+			if p.Type() == chess.King && p.Color() == turn {
+				ctx.Set("fillStyle", "rgba(255, 0, 0, 0.5)") // Red highlight for King in check
+				x, y := getXY(int(sq.File()), int(sq.Rank()), tileSize)
+				ctx.Call("fillRect", x, y, tileSize, tileSize)
+				break
+			}
+		}
+	}
+
 	if isSetupMode {
 		for sq, p := range setupMap {
 			drawPieceAt(sq, p, tileSize)

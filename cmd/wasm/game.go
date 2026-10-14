@@ -25,7 +25,11 @@ func executeMove(moveStr string, relay bool) {
 	if target != nil {
 		// Show what the engine thought was best for the position we JUST left
 		if lastHumanSuggestion != "" {
-			showSuggestion("Best move was: " + lastHumanSuggestion)
+			text := "Best move was: " + lastHumanSuggestion
+			if moveStr == lastHumanSuggestion {
+				text += " 👍"
+			}
+			showSuggestion(text)
 		}
 		lastHumanSuggestion = "" // Clear for next turn
 

@@ -49,12 +49,12 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Version 4.8 - High Visibility Status")
-	fmt.Println("WASM: Version 5.0 - New Game Reset Fixed")
+	fmt.Println("WASM: Version 5.2 - Check Highlight Active")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v5.0 - NEW GAME RESET READY")
+		statusLine.Set("innerText", "WASM v5.2 - CHECK HIGHLIGHT READY")
 		statusLine.Get("style").Set("color", "#ffffff")
 	}
 
