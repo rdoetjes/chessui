@@ -50,9 +50,9 @@ func connect(host, roomID string, isSecure bool) {
 		statusLine := doc.Call("getElementById", "wasm-status")
 		if !statusLine.IsNull() {
 			if isMultiplayer {
-				statusLine.Set("innerText", "WASM v3.6 - MULTIPLAYER READY")
+				statusLine.Set("innerText", "WASM v3.9 - MULTIPLAYER READY")
 			} else {
-				statusLine.Set("innerText", "WASM v3.6 - BOT ACTIVE (READY)")
+				statusLine.Set("innerText", "WASM v3.9 - BOT ACTIVE")
 			}
 			statusLine.Get("style").Set("color", "#4CAF50")
 		}

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grandmaster Chess (v3.4)</title>
-    <link rel="stylesheet" href="style.css"> <!-- Reverted to style.css for assets -->
+    <title>Grandmaster Chess (v3.9)</title>
+    <link rel="stylesheet" href="style.css">
     <script src="wasm_exec.js"></script>
     <style>
-        /* VERSION 3.5 - LAYOUT FIX */
+        /* VERSION 3.9 - TRAINING FIX */
         body { 
             background-color: #1a1a1a !important; 
             margin: 0;
@@ -19,7 +19,7 @@
         }
         #wasm-status { 
             padding: 8px; 
-            background: #4b0082; /* KEEP THE PURPLE BUT ONLY FOR THE BAR */
+            background: #4b0082; 
             color: #ffeb3b; 
             font-size: 0.9rem; 
             text-align: center;
@@ -36,7 +36,7 @@
     </style>
 </head>
 <body>
-    <div id="wasm-status">WASM v3.5: LOADING...</div>
+    <div id="wasm-status">WASM v3.9: LOADING...</div>
     <div id="app">
         <div class="sidebar left-sidebar">
             <div class="panel">
@@ -170,12 +170,12 @@
     </div>
     <script>
         const go = new Go();
-        const v = "3.6-" + new Date().getTime();
-        console.log("WASM: Fetching v3.6 logic...");
+        const v = "3.9-" + new Date().getTime();
+        console.log("WASM: Fetching v3.9 logic...");
         fetch("main.wasm?v=" + v)
             .then(response => WebAssembly.instantiateStreaming(response, go.importObject))
             .then((result) => {
-                console.log("WASM: v3.6 Loaded successfully");
+                console.log("WASM: v3.9 Loaded successfully");
                 go.run(result.instance);
             });
     </script>

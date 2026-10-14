@@ -48,11 +48,21 @@ func processBotResponse(moveStr string) {
 		return
 	}
 
-	// TRUTH CHECK: Is it still the bot's turn?
-	if game.Position().Turn() != playerColor {
-		fmt.Printf("WASM: Executing BOT move: %s\n", moveStr)
-		executeMove(moveStr, false)
-	} else {
-		fmt.Printf("WASM: Ignoring bestmove %s (not bot's turn)\n", moveStr)
+	// If it's currently the human's turn, this is a background suggestion.
+	if game.Position().Turn() == playerColor {
+		lastHumanSuggestion = moveStr
+		return
+	}
+
+	// If it's the bot's turn, this is the move it wants to play.
+	fmt.Printf("WASM: Executing BOT move: %s\n", moveStr)
+	executeMove(moveStr, false)
+}
+
+func showSuggestion(text string) {
+	doc := js.Global().Get("document")
+	el := doc.Call("getElementById", "engine-suggestion")
+	if !el.IsNull() {
+		el.Set("innerText", text)
 	}
 }

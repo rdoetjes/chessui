@@ -23,6 +23,20 @@ func executeMove(moveStr string, relay bool) {
 
 	// 2. If move is valid, apply it
 	if target != nil {
+		if relay {
+			// Show what the engine thought was best for the position we JUST left
+			if lastHumanSuggestion != "" {
+				showSuggestion("Best move was: " + lastHumanSuggestion)
+			}
+			lastHumanSuggestion = "" // Clear for next turn
+		}
+
+		// Trigger animation
+		animMove = target
+		animPiece = game.Position().Board().Piece(target.S1())
+		animProgress = 0.0
+		animStartTime = js.Global().Get("performance").Call("now").Float()
+
 		if err := game.Move(target); err == nil {
 			lastMove = target
 			updateMoveList()

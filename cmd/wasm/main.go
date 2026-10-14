@@ -31,6 +31,15 @@ var (
 		"white": chess.White,
 		"black": chess.Black,
 	}
+
+	// Animation State
+	animMove      *chess.Move
+	animPiece     chess.Piece
+	animProgress  float64 = 1.0 // 0.0 to 1.0
+	animStartTime float64
+	animDuration  = 200.0 // milliseconds
+
+	lastHumanSuggestion string
 )
 
 func main() {
@@ -39,12 +48,12 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Initializing Modular System...")
-	fmt.Println("WASM: Version 3.6 - CACHE BUSTER FINAL")
+	fmt.Println("WASM: Version 3.9 - Training System Fixed")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v3.6 - INITIALIZING...")
+		statusLine.Set("innerText", "WASM v3.9 - TRAINING SYSTEM FIXED")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")

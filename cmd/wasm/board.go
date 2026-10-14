@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"syscall/js"
 
 	"github.com/notnil/chess"
 )
@@ -17,6 +18,14 @@ func getXY(file, rank int, tileSize float64) (float64, float64) {
 }
 
 func drawBoard() {
+	now := js.Global().Get("performance").Call("now").Float()
+	if animProgress < 1.0 {
+		animProgress = (now - animStartTime) / animDuration
+		if animProgress > 1.0 {
+			animProgress = 1.0
+		}
+	}
+
 	rect := boardCanvas.Call("getBoundingClientRect")
 	w := rect.Get("width").Float()
 	if w < 10 {
@@ -73,6 +82,14 @@ func drawBoard() {
 		}
 	}
 
+	if lastMove != nil && !isSetupMode {
+		ctx.Set("fillStyle", "rgba(255, 170, 0, 0.4)") // Pale Orange highlight
+		x1, y1 := getXY(int(lastMove.S1().File()), int(lastMove.S1().Rank()), tileSize)
+		x2, y2 := getXY(int(lastMove.S2().File()), int(lastMove.S2().Rank()), tileSize)
+		ctx.Call("fillRect", x1, y1, tileSize, tileSize)
+		ctx.Call("fillRect", x2, y2, tileSize, tileSize)
+	}
+
 	if isSetupMode {
 		for sq, p := range setupMap {
 			drawPieceAt(sq, p, tileSize)
@@ -82,18 +99,27 @@ func drawBoard() {
 		for i := 0; i < 64; i++ {
 			sq := chess.Square(i)
 			p := board.Piece(sq)
+
+			// Skip drawing the piece if it's currently animating
+			if animProgress < 1.0 && animMove != nil && sq == animMove.S2() {
+				continue
+			}
+
 			if p != chess.NoPiece {
 				drawPieceAt(sq, p, tileSize)
 			}
 		}
-	}
 
-	if lastMove != nil && !isSetupMode {
-		ctx.Set("fillStyle", "rgba(255, 255, 0, 0.3)")
-		x1, y1 := getXY(int(lastMove.S1().File()), int(lastMove.S1().Rank()), tileSize)
-		x2, y2 := getXY(int(lastMove.S2().File()), int(lastMove.S2().Rank()), tileSize)
-		ctx.Call("fillRect", x1, y1, tileSize, tileSize)
-		ctx.Call("fillRect", x2, y2, tileSize, tileSize)
+		// Draw the animating piece
+		if animProgress < 1.0 && animMove != nil {
+			x1, y1 := getXY(int(animMove.S1().File()), int(animMove.S1().Rank()), tileSize)
+			x2, y2 := getXY(int(animMove.S2().File()), int(animMove.S2().Rank()), tileSize)
+
+			currentX := x1 + (x2-x1)*animProgress
+			currentY := y1 + (y2-y1)*animProgress
+
+			drawPieceAtCoords(animPiece, currentX, currentY, tileSize)
+		}
 	}
 
 	if selectedPos != chess.NoSquare && !isSetupMode {
@@ -113,6 +139,11 @@ func drawBoard() {
 }
 
 func drawPieceAt(sq chess.Square, p chess.Piece, tileSize float64) {
+	x, y := getXY(int(sq.File()), int(sq.Rank()), tileSize)
+	drawPieceAtCoords(p, x, y, tileSize)
+}
+
+func drawPieceAtCoords(p chess.Piece, x, y, tileSize float64) {
 	pStr, pChar := "w", ""
 	if p.Color() == chess.Black {
 		pStr = "b"
@@ -132,7 +163,6 @@ func drawPieceAt(sq chess.Square, p chess.Piece, tileSize float64) {
 		pChar = "k"
 	}
 	pStr += pChar
-	x, y := getXY(int(sq.File()), int(sq.Rank()), tileSize)
 	if img, ok := images[pStr]; ok && img.Get("complete").Bool() && img.Get("naturalWidth").Int() > 0 {
 		ctx.Call("drawImage", img, x, y, tileSize, tileSize)
 	} else {
