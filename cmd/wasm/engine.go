@@ -50,10 +50,11 @@ func connect(host, roomID string, isSecure bool) {
 		fmt.Println("WASM: WebSocket connected")
 		doc := js.Global().Get("document")
 		statusLine := doc.Call("getElementById", "wasm-status")
-		if isMultiplayer {
-				statusLine.Set("innerText", "WASM v5.14 - MULTIPLAYER READY")
+		if !statusLine.IsNull() {
+			if isMultiplayer {
+				statusLine.Set("innerText", "WASM v5.15 - MULTIPLAYER READY")
 			} else {
-				statusLine.Set("innerText", "WASM v5.14 - BOT ACTIVE")
+				statusLine.Set("innerText", "WASM v5.15 - BOT ACTIVE")
 			}
 			statusLine.Get("style").Set("color", "#ffffff")
 		}
