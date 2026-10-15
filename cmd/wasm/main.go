@@ -99,9 +99,7 @@ func main() {
 	boardCanvas = doc.Call("getElementById", "chess-board")
 	ctx = boardCanvas.Call("getContext", "2d")
 
-	fetchConfig(func() {
-		setupWebSocket()
-	})
+	setupWebSocket()
 	loadAssets()
 	registerEvents()
 	updateCapturedPieces()

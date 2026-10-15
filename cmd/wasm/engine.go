@@ -3,7 +3,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"syscall/js"
 
 	"github.com/notnil/chess"
@@ -89,7 +91,23 @@ func connect(host, roomID string, isSecure bool) {
 
 	ws.Set("onmessage", js.FuncOf(func(this js.Value, args []js.Value) any {
 		msg := args[0].Get("data").String()
-		// fmt.Printf("WASM: Incoming: %s\n", msg) // Extremely verbose, but helpful for debugging
+
+		// Handle JSON config messages
+		if strings.HasPrefix(msg, "{\"type\":\"config\"") {
+			var cfg struct {
+				Depth   int `json:"depth"`
+				Threads int `json:"threads"`
+			}
+			if err := json.Unmarshal([]byte(msg), &cfg); err == nil {
+				engineDepth = cfg.Depth
+				engineThreads = cfg.Threads
+				fmt.Printf("WASM: Config received via WS - Depth: %d, Threads: %d\n", engineDepth, engineThreads)
+				// Re-send threads option now that we know the real value
+				sendUCI(fmt.Sprintf("setoption name Threads value %d", engineThreads))
+			}
+			return nil
+		}
+
 		if handleMultiplayerMessage(msg) {
 			return nil
 		}

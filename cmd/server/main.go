@@ -93,6 +93,10 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		log.Printf("SERVER: Started Stockfish for room %s\n", roomID)
 		room = &Room{ID: roomID, Players: []*websocket.Conn{}, Stockfish: cmd, SFStdin: stdin, SFStdout: stdout}
 
+		// Send engine configuration to the first player
+		configMsg, _ := json.Marshal(map[string]any{"type": "config", "depth": config.Depth, "threads": config.Threads})
+		conn.WriteMessage(websocket.TextMessage, configMsg)
+
 		go func(rm *Room) {
 			// Tell the client that Stockfish is starting
 			rm.Mutex.Lock()
@@ -120,6 +124,11 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	}
 	room.Mutex.Lock()
 	room.Players = append(room.Players, conn)
+
+	// Send engine configuration to every joining player
+	configMsg, _ := json.Marshal(map[string]any{"type": "config", "depth": config.Depth, "threads": config.Threads})
+	conn.WriteMessage(websocket.TextMessage, configMsg)
+
 	room.Mutex.Unlock()
 	roomsMu.Unlock()
 
