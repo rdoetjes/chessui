@@ -24,6 +24,7 @@ func handleSetupToggle() {
 		f, _ := chess.FEN("8/8/8/8/8/8/8/8 w - - 0 1")
 		game = chess.NewGame(f)
 		lastMove = nil
+		moveAnnotations = nil
 		updateMoveList()
 	} else {
 		wKing, bKing := false, false
@@ -48,6 +49,7 @@ func handleSetupToggle() {
 		turn := doc.Call("getElementById", "turn-select").Get("value").String()
 		f, _ := chess.FEN(generateFEN(setupMap, turn))
 		game = chess.NewGame(f)
+		moveAnnotations = nil
 		handleBotTurn()
 		updateMoveList()
 	}

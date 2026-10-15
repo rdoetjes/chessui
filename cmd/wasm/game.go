@@ -26,14 +26,21 @@ func executeMove(moveStr string, relay bool) {
 		if isGameOver {
 			return
 		}
+		// Record state BEFORE move
+		lastPositionEval = evalScore
+		lastMoveSide = game.Position().Turn()
+
 		// Show what the engine thought was best for the position we JUST left
-		if lastHumanSuggestion != "" {
+		annotation := ""
+		if lastHumanSuggestion != "" && relay {
 			text := "Best move was: " + lastHumanSuggestion
 			if moveStr == lastHumanSuggestion {
 				text += " 👍"
+				annotation = "🟢"
 			}
 			showSuggestion(text)
 		}
+		moveAnnotations = append(moveAnnotations, annotation)
 		lastHumanSuggestion = "" // Clear for next turn
 
 		// Trigger animation

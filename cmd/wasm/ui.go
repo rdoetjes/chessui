@@ -42,6 +42,7 @@ func registerEvents() {
 		showSuggestion("")                                             // Clear suggestion UI
 		doc.Call("getElementById", "engine-info").Set("innerText", "") // Clear engine info
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
+		moveAnnotations = nil
 		sendUCI("ucinewgame")
 		updateMoveList()
 		updateCapturedPieces()
@@ -63,6 +64,12 @@ func registerEvents() {
 		}
 
 		newMoves := moves[:len(moves)-toTakeBack]
+
+		if len(moveAnnotations) >= toTakeBack {
+			moveAnnotations = moveAnnotations[:len(moveAnnotations)-toTakeBack]
+		} else {
+			moveAnnotations = nil
+		}
 
 		// Reset game and re-apply moves
 		game = chess.NewGame()
@@ -171,9 +178,22 @@ func updateMoveList() {
 	for i := 0; i < len(moves); i += 2 {
 		div := doc.Call("createElement", "div")
 		div.Get("classList").Call("add", "move-row")
-		text := fmt.Sprintf("%d. %s", (i/2)+1, moves[i].String())
+
+		// Move 1
+		m1 := moves[i].String()
+		if i < len(moveAnnotations) && moveAnnotations[i] != "" {
+			m1 += " " + moveAnnotations[i]
+		}
+
+		text := fmt.Sprintf("%d. %s", (i/2)+1, m1)
+
+		// Move 2
 		if i+1 < len(moves) {
-			text += " " + moves[i+1].String()
+			m2 := moves[i+1].String()
+			if i+1 < len(moveAnnotations) && moveAnnotations[i+1] != "" {
+				m2 += " " + moveAnnotations[i+1]
+			}
+			text += " " + m2
 		}
 		div.Set("innerText", text)
 		list.Call("appendChild", div)

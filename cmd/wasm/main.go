@@ -41,11 +41,15 @@ var (
 	animDuration  = 200.0 // milliseconds
 
 	lastHumanSuggestion string
+	lastPositionEval    float64
+	lastMoveSide        chess.Color
 
 	// Promotion State
 	isPromotionMode   bool
 	promoSourceSquare chess.Square
 	promoTargetSquare chess.Square
+
+	moveAnnotations []string
 )
 
 func main() {
