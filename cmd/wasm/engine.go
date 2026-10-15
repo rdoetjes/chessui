@@ -92,17 +92,17 @@ func connect(host, roomID string, isSecure bool) {
 	ws.Set("onmessage", js.FuncOf(func(this js.Value, args []js.Value) any {
 		msg := args[0].Get("data").String()
 
-		// Handle JSON config messages
-		if strings.HasPrefix(msg, "{\"type\":\"config\"") {
+		// Handle JSON config messages (more robust check)
+		if strings.HasPrefix(msg, "{") && strings.Contains(msg, "\"type\":\"config\"") {
 			var cfg struct {
-				Depth   int `json:"depth"`
-				Threads int `json:"threads"`
+				Type    string `json:"type"`
+				Depth   int    `json:"depth"`
+				Threads int    `json:"threads"`
 			}
-			if err := json.Unmarshal([]byte(msg), &cfg); err == nil {
+			if err := json.Unmarshal([]byte(msg), &cfg); err == nil && cfg.Type == "config" {
 				engineDepth = cfg.Depth
 				engineThreads = cfg.Threads
-				fmt.Printf("WASM: Config received via WS - Depth: %d, Threads: %d\n", engineDepth, engineThreads)
-				// Re-send threads option now that we know the real value
+				fmt.Printf("WASM: Config received - Depth: %d, Threads: %d\n", engineDepth, engineThreads)
 				sendUCI(fmt.Sprintf("setoption name Threads value %d", engineThreads))
 			}
 			return nil

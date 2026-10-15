@@ -128,6 +128,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	// Send engine configuration to every joining player
 	configMsg, _ := json.Marshal(map[string]any{"type": "config", "depth": config.Depth, "threads": config.Threads})
 	conn.WriteMessage(websocket.TextMessage, configMsg)
+	log.Printf("SERVER: Sent config to player in room %s (Depth: %d, Threads: %d)\n", roomID, config.Depth, config.Threads)
 
 	room.Mutex.Unlock()
 	roomsMu.Unlock()
