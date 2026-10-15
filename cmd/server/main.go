@@ -187,6 +187,12 @@ func main() {
 	assetsDir := filepath.Join(filepath.Dir(absWebDir), "assets")
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("SERVER: Config requested by %s\n", r.RemoteAddr)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(config)
+	})
+	mux.HandleFunc("/ws", handleWS)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			http.ServeFile(w, r, filepath.Join(absWebDir, "index.html"))
@@ -195,12 +201,6 @@ func main() {
 		http.FileServer(http.Dir(absWebDir)).ServeHTTP(w, r)
 	})
 	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsDir))))
-	mux.HandleFunc("/ws", handleWS)
-	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("SERVER: Config requested by %s\n", r.RemoteAddr)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(config)
-	})
 
 	log.Printf("SERVER: Listening on http://localhost:%d\n", config.Port)
 	log.Printf("SERVER: Serving web assets from %s\n", absWebDir)
