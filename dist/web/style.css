@@ -120,7 +120,7 @@ button:hover {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: calc(60vh + 80px); /* Board + Captured Rows height */
+    height: calc(60vh + 10px); /* Board + Captured Rows height */
     max-height: calc(80vw + 80px);
     border: 2px solid #444;
 }
@@ -128,7 +128,7 @@ button:hover {
 #eval-bar-background {
     flex: 1;
     width: 100%;
-    background-color: #000; 
+    background-color: #000;
     display: flex;
     flex-direction: column-reverse; /* White fills from bottom */
     position: relative;
@@ -152,7 +152,7 @@ button:hover {
 }
 
 #board-wrapper {
-    width: 60vh; 
+    width: 60vh;
     height: 60vh;
     max-width: 80vw;
     max-height: 80vw;
@@ -311,7 +311,7 @@ canvas {
   height: 20px;
 }
 
-.switch input { 
+.switch input {
   opacity: 0;
   width: 0;
   height: 0;
