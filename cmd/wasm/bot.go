@@ -4,8 +4,52 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"syscall/js"
 )
+
+type EngineSettings struct {
+	LimitStrength bool
+	Elo           int
+	SkillLevel    int
+	Depth         int
+	MoveTime      int
+}
+
+func getEngineSettings(elo int) EngineSettings {
+	switch elo {
+	case 100:
+		return EngineSettings{LimitStrength: true, Elo: 1350, SkillLevel: 0, Depth: 1, MoveTime: 20}
+	case 300:
+		return EngineSettings{LimitStrength: true, Elo: 1350, SkillLevel: 1, Depth: 2, MoveTime: 30}
+	case 500:
+		return EngineSettings{LimitStrength: true, Elo: 1350, SkillLevel: 2, Depth: 2, MoveTime: 50}
+	case 700:
+		return EngineSettings{LimitStrength: true, Elo: 700, SkillLevel: -1, Depth: 3, MoveTime: 80}
+	case 900:
+		return EngineSettings{LimitStrength: true, Elo: 900, SkillLevel: -1, Depth: 4, MoveTime: 100}
+	case 1100:
+		return EngineSettings{LimitStrength: true, Elo: 1100, SkillLevel: -1, Depth: 5, MoveTime: 150}
+	case 1300:
+		return EngineSettings{LimitStrength: true, Elo: 1300, SkillLevel: -1, Depth: 6, MoveTime: 200}
+	case 1500:
+		return EngineSettings{LimitStrength: true, Elo: 1500, SkillLevel: -1, Depth: 8, MoveTime: 300}
+	case 1700:
+		return EngineSettings{LimitStrength: true, Elo: 1700, SkillLevel: -1, Depth: 10, MoveTime: 400}
+	case 1900:
+		return EngineSettings{LimitStrength: true, Elo: 1900, SkillLevel: -1, Depth: 12, MoveTime: 500}
+	case 2100:
+		return EngineSettings{LimitStrength: false, Depth: 14, MoveTime: 800}
+	case 2300:
+		return EngineSettings{LimitStrength: false, Depth: 16, MoveTime: 1000}
+	case 2500:
+		return EngineSettings{LimitStrength: false, Depth: 18, MoveTime: 1500}
+	case 2700:
+		return EngineSettings{LimitStrength: false, Depth: 20, MoveTime: 2000}
+	default:
+		return EngineSettings{LimitStrength: true, Elo: elo, SkillLevel: -1, Depth: 5, MoveTime: 150}
+	}
+}
 
 var currentMoveIndex int = 0
 
@@ -27,28 +71,37 @@ func handleBotTurn() {
 
 	// Set engine strength
 	eloStr := js.Global().Get("document").Call("getElementById", "elo-select").Get("value").String()
+	eloVal, _ := strconv.Atoi(eloStr)
+	settings := getEngineSettings(eloVal)
 
-	// If Elo is 2850 (Max), disable limit strength to allow full configured depth
-	if eloStr == "2850" {
+	if !settings.LimitStrength {
 		sendUCI("setoption name UCI_LimitStrength value false")
 	} else {
 		sendUCI("setoption name UCI_LimitStrength value true")
-		sendUCI("setoption name UCI_Elo value " + eloStr)
+		sendUCI(fmt.Sprintf("setoption name UCI_Elo value %d", settings.Elo))
+		if settings.SkillLevel >= 0 {
+			sendUCI(fmt.Sprintf("setoption name Skill Level value %d", settings.SkillLevel))
+		} else {
+			// Reset skill level to max if not using it
+			sendUCI("setoption name Skill Level value 20")
+		}
 	}
 
 	sendUCI("position fen " + currentFen)
 	sendUCI("isready")
 
+	goCommand := fmt.Sprintf("go depth %d movetime %d", settings.Depth, settings.MoveTime)
+
 	// In multiplayer, we always just analyze (no matter whose turn)
 	// In single player, we analyze on our turn and think on bot's turn
 	if isMultiplayer {
 		fmt.Printf("WASM: [ID:%d] Multiplayer Analysis. FEN: %s\n", myMoveIndex, currentFen)
-		sendUCI(fmt.Sprintf("go depth %d", engineDepth))
+		sendUCI(goCommand)
 	} else if turn != playerColor {
 		fmt.Printf("WASM: [ID:%d] BOT Turn. Thinking...\n", myMoveIndex)
-		sendUCI(fmt.Sprintf("go depth %d", engineDepth))
+		sendUCI(goCommand)
 	} else {
-		sendUCI(fmt.Sprintf("go depth %d", engineDepth))
+		sendUCI(goCommand)
 	}
 }
 

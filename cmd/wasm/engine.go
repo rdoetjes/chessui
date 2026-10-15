@@ -96,13 +96,11 @@ func connect(host, roomID string, isSecure bool) {
 		if strings.HasPrefix(msg, "{") && strings.Contains(msg, "\"type\":\"config\"") {
 			var cfg struct {
 				Type    string `json:"type"`
-				Depth   int    `json:"depth"`
 				Threads int    `json:"threads"`
 			}
 			if err := json.Unmarshal([]byte(msg), &cfg); err == nil && cfg.Type == "config" {
-				engineDepth = cfg.Depth
 				engineThreads = cfg.Threads
-				fmt.Printf("WASM: Config received - Depth: %d, Threads: %d\n", engineDepth, engineThreads)
+				fmt.Printf("WASM: Config received - Threads: %d\n", engineThreads)
 				sendUCI(fmt.Sprintf("setoption name Threads value %d", engineThreads))
 			}
 			return nil

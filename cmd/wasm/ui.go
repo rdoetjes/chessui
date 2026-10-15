@@ -103,6 +103,11 @@ func registerEvents() {
 		return nil
 	}))
 
+	doc.Call("getElementById", "elo-select").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
+		handleBotTurn()
+		return nil
+	}))
+
 	doc.Call("getElementById", "setup-board").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		handleSetupToggle()
 		return nil

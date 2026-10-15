@@ -20,7 +20,6 @@ import (
 type Config struct {
 	StockfishPath string `json:"stockfish_path"`
 	Threads       int    `json:"threads"`
-	Depth         int    `json:"depth"`
 	Port          int    `json:"port"`
 }
 
@@ -45,7 +44,7 @@ var (
 
 func loadConfig() {
 	// Default values
-	config = Config{StockfishPath: "stockfish", Threads: 4, Depth: 20, Port: 8081}
+	config = Config{StockfishPath: "stockfish", Threads: 4, Port: 8081}
 
 	// Try primary path
 	paths := []string{"/usr/local/etc/chess-server/config.json", "config.json"}
@@ -61,7 +60,7 @@ func loadConfig() {
 			log.Printf("ERROR: Failed to decode config at %s: %v\n", path, err)
 		}
 	}
-	log.Printf("SERVER: Using default configuration (Depth: %d, Port: %d)\n", config.Depth, config.Port)
+	log.Printf("SERVER: Using default configuration (Port: %d)\n", config.Port)
 }
 
 func handleWS(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +93,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		room = &Room{ID: roomID, Players: []*websocket.Conn{}, Stockfish: cmd, SFStdin: stdin, SFStdout: stdout}
 
 		// Send engine configuration to the first player
-		configMsg, _ := json.Marshal(map[string]any{"type": "config", "depth": config.Depth, "threads": config.Threads})
+		configMsg, _ := json.Marshal(map[string]any{"type": "config", "threads": config.Threads})
 		conn.WriteMessage(websocket.TextMessage, configMsg)
 
 		go func(rm *Room) {
@@ -126,9 +125,9 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	room.Players = append(room.Players, conn)
 
 	// Send engine configuration to every joining player
-	configMsg, _ := json.Marshal(map[string]any{"type": "config", "depth": config.Depth, "threads": config.Threads})
+	configMsg, _ := json.Marshal(map[string]any{"type": "config", "threads": config.Threads})
 	conn.WriteMessage(websocket.TextMessage, configMsg)
-	log.Printf("SERVER: Sent config to player in room %s (Depth: %d, Threads: %d)\n", roomID, config.Depth, config.Threads)
+	log.Printf("SERVER: Sent config to player in room %s (Threads: %d)\n", roomID, config.Threads)
 
 	room.Mutex.Unlock()
 	roomsMu.Unlock()
