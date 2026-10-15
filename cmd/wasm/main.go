@@ -88,7 +88,7 @@ func main() {
 	images = make(map[string]js.Value)
 	setupMap = make(map[chess.Square]chess.Piece)
 
-	fmt.Println("Stockfish Chess UI Light")
+	fmt.Println("Stockfish Chess UI Light - v1.0.2")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")

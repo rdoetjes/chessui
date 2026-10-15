@@ -26,9 +26,15 @@ func handleBotTurn() {
 	currentFen := game.Position().String()
 
 	// Set engine strength
-	elo := js.Global().Get("document").Call("getElementById", "elo-select").Get("value").String()
-	sendUCI("setoption name UCI_LimitStrength value true")
-	sendUCI("setoption name UCI_Elo value " + elo)
+	eloStr := js.Global().Get("document").Call("getElementById", "elo-select").Get("value").String()
+
+	// If Elo is 2850 (Max), disable limit strength to allow full configured depth
+	if eloStr == "2850" {
+		sendUCI("setoption name UCI_LimitStrength value false")
+	} else {
+		sendUCI("setoption name UCI_LimitStrength value true")
+		sendUCI("setoption name UCI_Elo value " + eloStr)
+	}
 
 	sendUCI("position fen " + currentFen)
 	sendUCI("isready")
