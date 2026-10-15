@@ -44,8 +44,8 @@ var (
 )
 
 func loadConfig() {
-	config = Config{StockfishPath: "stockfish", Threads: 2, Depth: 15, Port: 8081}
-	file, err := os.Open("config.json")
+	config = Config{StockfishPath: "stockfish", Threads: 4, Depth: 20, Port: 8081}
+	file, err := os.Open("/usr/local/etc/chess-server/config.json")
 	if err == nil {
 		json.NewDecoder(file).Decode(&config)
 		file.Close()
