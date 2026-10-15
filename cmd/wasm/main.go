@@ -54,12 +54,12 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Version 4.8 - High Visibility Status")
-	fmt.Println("WASM: Version 5.7 - Jail Deployment Ready")
+	fmt.Println("WASM: Version 5.8 - Jail Automation Fix")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v5.7 - JAIL DEPLOYMENT READY")
+		statusLine.Set("innerText", "WASM v5.8 - JAIL AUTOMATION READY")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")

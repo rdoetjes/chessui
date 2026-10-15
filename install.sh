@@ -1,33 +1,38 @@
 #!/bin/bash
 set -e
 
-JAIL_ROOT="/zroot/sylve/jails/100"
-JAIL_WWW="$JAIL_ROOT/usr/local/www/chess"
-JAIL_BIN="$JAIL_ROOT/usr/local/bin"
-JAIL_RC="$JAIL_ROOT/usr/local/etc/rc.d"
+# Jail configuration
+JAIL_ID="2"
+JAIL_PATH="/zroot/sylve/jails/100"
+JAIL_BIN="$JAIL_PATH/usr/local/bin"
+JAIL_WWW="$JAIL_PATH/usr/local/www/chess"
+JAIL_RC="$JAIL_PATH/usr/local/etc/rc.d"
 
 if [[ "$1" == "-jail" ]]; then
-    echo "Installing Grandmaster Chess to Jail..."
-    
-    # 1. Build locally on host
+    echo "--- Building Grandmaster Chess on Host ---"
     make all
+
+    echo "--- Deploying to Jail $JAIL_ID ($JAIL_PATH) ---"
     
-    # 2. Create jail directories if they don't exist
-    mkdir -p "$JAIL_WWW"
+    # Ensure directories exist
     mkdir -p "$JAIL_BIN"
+    mkdir -p "$JAIL_WWW"
     mkdir -p "$JAIL_RC"
 
-    # 3. Copy Web Assets
-    echo "Copying web assets to $JAIL_WWW..."
+    # 1. Copy Server Binary & Config
+    echo "Installing server to $JAIL_BIN..."
+    cp -f chess-server "$JAIL_BIN/"
+    cp -f config.json "$JAIL_BIN/"
+    chmod 755 "$JAIL_BIN/chess-server"
+
+    # 2. Copy Web Assets
+    echo "Installing web assets to $JAIL_WWW..."
+    # Clear old web files to ensure a clean update
+    rm -rf "$JAIL_WWW"/*
     cp -r web/* "$JAIL_WWW/"
     cp -r assets "$JAIL_WWW/"
 
-    # 4. Copy Server Binary & Config
-    echo "Copying server to $JAIL_BIN..."
-    cp chess-server "$JAIL_BIN/"
-    cp config.json "$JAIL_BIN/"
-
-    # 5. Create and Copy RC Script
+    # 3. Create/Update RC Script
     echo "Installing RC script to $JAIL_RC/chessui..."
     cat > "$JAIL_RC/chessui" <<EOF
 #!/bin/sh
@@ -60,29 +65,23 @@ chessui_start()
 load_rc_config \$name
 run_rc_command "\$1"
 EOF
-    chmod +x "$JAIL_RC/chessui"
+    chmod 555 "$JAIL_RC/chessui"
 
-    echo "Jail Installation Complete!"
-    echo "Inside the jail, run: sysrc chessui_enable=YES && service chessui start"
+    # 4. Restart service inside jail using jexec
+    echo "--- Restarting Service inside Jail $JAIL_ID ---"
+    jexec $JAIL_ID service chessui restart || echo "Warning: Could not restart service (is it enabled?)"
+    
+    echo "--- Deployment Complete ---"
     exit 0
 fi
 
-echo "Local Installation..."
-# Create installation directory
+# Standard Local Installation
+echo "Installing to Local Directory..."
 INSTALL_DIR=${1:-"./dist"}
 mkdir -p "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR/web"
-mkdir -p "$INSTALL_DIR/assets"
-
-# Build the project
 make all
-
-# Copy files
 cp chess-server "$INSTALL_DIR/"
 cp config.json "$INSTALL_DIR/"
 cp -r web/* "$INSTALL_DIR/web/"
-cp -r assets/* "$INSTALL_DIR/assets/"
-
+cp -r assets "$INSTALL_DIR/assets/"
 echo "Installation complete in $INSTALL_DIR"
-echo "To run the server:"
-echo "  cd $INSTALL_DIR && ./chess-server"
