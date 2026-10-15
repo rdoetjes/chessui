@@ -46,7 +46,7 @@ func updateEvalBar() {
 		bText.Set("innerText", "")
 		// If very winning for white, make text black on white fill
 		if percent > 80 {
-			wText.Get("style").Set("color", "#000")
+			wText.Get("style").Set("color", "#fff")
 		} else {
 			wText.Get("style").Set("color", "#fff")
 		}
