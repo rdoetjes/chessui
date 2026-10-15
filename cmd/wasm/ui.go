@@ -175,6 +175,8 @@ func updateMoveList() {
 		div.Set("innerText", text)
 		list.Call("appendChild", div)
 	}
+	// Scroll to bottom
+	list.Set("scrollTop", list.Get("scrollHeight"))
 }
 
 func loadAssets() {
