@@ -44,8 +44,9 @@ case "$1" in
 name="chess_server"
 rcvar="chess_server_enable"
 
-chess_server_dir="/usr/local/www/chess"
 command="/usr/local/bin/chess-server"
+# The -web flag tells the server where to find the static files
+command_args="-web /usr/local/www/chess/web"
 pidfile="/var/run/\${name}.pid"
 
 # Run as caddy user inside the jail
@@ -56,8 +57,9 @@ start_cmd="chess_server_start"
 chess_server_start()
 {
     echo "Starting Grandmaster Chess Server..."
-    cd \${chess_server_dir}
-    /usr/sbin/daemon -f -p \${pidfile} -u \${chess_server_user} \${command}
+    # Config needs to be in the working directory
+    cd /usr/local/bin
+    /usr/sbin/daemon -f -p \${pidfile} -u \${chess_server_user} \${command} \${command_args}
 }
 
 load_rc_config \$name

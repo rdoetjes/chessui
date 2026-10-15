@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -164,18 +166,27 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	webDir := flag.String("web", "web", "Directory for web assets")
+	flag.Parse()
+
 	loadConfig()
+
+	absWebDir, _ := filepath.Abs(*webDir)
+	assetsDir := filepath.Join(filepath.Dir(absWebDir), "assets")
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			http.ServeFile(w, r, "web/index.html")
+			http.ServeFile(w, r, filepath.Join(absWebDir, "index.html"))
 			return
 		}
-		http.FileServer(http.Dir("web")).ServeHTTP(w, r)
+		http.FileServer(http.Dir(absWebDir)).ServeHTTP(w, r)
 	})
-	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsDir))))
 	mux.HandleFunc("/ws", handleWS)
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) { json.NewEncoder(w).Encode(config) })
+
 	log.Printf("SERVER: Listening on http://localhost:%d\n", config.Port)
+	log.Printf("SERVER: Serving web assets from %s\n", absWebDir)
 	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), mux)
 }
