@@ -26,9 +26,9 @@ case "$1" in
 
         echo ">>> Copying web assets to ${JAIL_WWW}..."
         # Clear old web files to ensure a clean update
-        # Using :? to prevent catastrophic rm if variable is empty
         rm -rf "${JAIL_WWW:?}"/*
-        cp -r web/* "${JAIL_WWW}/"
+        # Copy the folders themselves, not just contents
+        cp -r web "${JAIL_WWW}/"
         cp -r assets "${JAIL_WWW}/"
 
         echo ">>> Installing RC script to ${JAIL_RC}/chess-server..."
