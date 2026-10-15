@@ -31,45 +31,45 @@ case "$1" in
         cp -r web/* "${JAIL_WWW}/"
         cp -r assets "${JAIL_WWW}/"
 
-        echo ">>> Installing RC script to ${JAIL_RC}/chessui..."
-        cat > "${JAIL_RC}/chessui" <<EOF
+        echo ">>> Installing RC script to ${JAIL_RC}/chess-server..."
+        cat > "${JAIL_RC}/chess-server" <<EOF
 #!/bin/sh
 #
-# PROVIDE: chessui
+# PROVIDE: chess_server
 # REQUIRE: LOGIN
 # KEYWORD: shutdown
 
 . /etc/rc.subr
 
-name="chessui"
-rcvar="chessui_enable"
+name="chess_server"
+rcvar="chess_server_enable"
 
-chessui_dir="/usr/local/www/chess"
+chess_server_dir="/usr/local/www/chess"
 command="/usr/local/bin/chess-server"
 pidfile="/var/run/\${name}.pid"
 
 # Run as caddy user inside the jail
-chessui_user="caddy"
+chess_server_user="caddy"
 
-start_cmd="chessui_start"
+start_cmd="chess_server_start"
 
-chessui_start()
+chess_server_start()
 {
     echo "Starting Grandmaster Chess Server..."
-    cd \${chessui_dir}
-    /usr/sbin/daemon -f -p \${pidfile} -u \${chessui_user} \${command}
+    cd \${chess_server_dir}
+    /usr/sbin/daemon -f -p \${pidfile} -u \${chess_server_user} \${command}
 }
 
 load_rc_config \$name
 run_rc_command "\$1"
 EOF
-        chmod 555 "${JAIL_RC}/chessui"
+        chmod 555 "${JAIL_RC}/chess-server"
 
         echo ">>> Restarting Service inside Jail ${JAIL_ID} ---"
-        jexec "${JAIL_ID}" service chessui restart || echo "Warning: Could not restart service (is it enabled?)"
-        jexec "${JAIL_ID}" service chessui reload || echo "Warning: Could not reload service"
+        jexec "${JAIL_ID}" service chess-server restart || echo "Warning: Could not restart service (is it enabled?)"
         
         echo ">>> DEPLOYMENT COMPLETE <<<"
+        echo "Note: Ensure 'chess_server_enable=\"YES\"' is in the jail's /etc/rc.conf"
         exit 0
         ;;
     *)
