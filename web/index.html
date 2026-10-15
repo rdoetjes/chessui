@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grandmaster Chess (v5.17)</title>
+    <title>Grandmaster Chess (v5.18)</title>
     <link rel="stylesheet" href="style.css">
     <script src="wasm_exec.js"></script>
     <style>
-        /* VERSION 5.17 - JAIL ROOT PATHS */
+        /* VERSION 5.18 - RELATIVE PATHS */
         body { 
             background-color: #1a1a1a !important; 
             margin: 0;
@@ -39,11 +39,11 @@
     </style>
 </head>
 <body>
-    <div id="wasm-status">WASM v5.17: LOADING...</div>
+    <div id="wasm-status">WASM v5.18: LOADING...</div>
     <div id="app">
         <div class="sidebar left-sidebar">
             <div class="panel">
-                <h2 style="color: #4CAF50;">Settings (v5.17)</h2>
+                <h2 style="color: #4CAF50;">Settings (v5.18)</h2>
                 <div class="control-group">
                     <label>Style</label>
                     <select id="style-select">
@@ -183,12 +183,12 @@
     </div>
     <script>
         const go = new Go();
-        const v = "5.17-" + new Date().getTime();
-        console.log("WASM: Fetching v5.17 logic...");
+        const v = "5.18-" + new Date().getTime();
+        console.log("WASM: Fetching v5.18 logic...");
         fetch("main.wasm?v=" + v)
             .then(response => WebAssembly.instantiateStreaming(response, go.importObject))
             .then((result) => {
-                console.log("WASM: v5.17 Loaded successfully");
+                console.log("WASM: v5.18 Loaded successfully");
                 go.run(result.instance);
             });
     </script>

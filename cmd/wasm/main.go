@@ -53,12 +53,12 @@ func main() {
 	images = make(map[string]js.Value)
 	setupMap = make(map[chess.Square]chess.Piece)
 
-	fmt.Println("WASM: Version 5.17 - Jail Root Paths")
+	fmt.Println("WASM: Version 5.18 - Relative Paths Ready")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v5.17 - READY")
+		statusLine.Set("innerText", "WASM v5.18 - RELATIVE PATHS READY")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")
