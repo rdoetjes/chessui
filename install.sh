@@ -9,8 +9,8 @@ JAIL_WWW="${JAIL_PATH}/usr/local/www/chess"
 JAIL_RC="${JAIL_PATH}/usr/local/etc/rc.d"
 
 case "$1" in
-    -jail)
-        echo ">>> STARTING JAIL DEPLOYMENT (v5.9)"
+    -jail|jail)
+        echo ">>> STARTING JAIL DEPLOYMENT (v5.10)"
         echo ">>> Building binaries on host..."
         make all
 
@@ -67,6 +67,7 @@ EOF
 
         echo ">>> Restarting Service inside Jail ${JAIL_ID} ---"
         jexec "${JAIL_ID}" service chessui restart || echo "Warning: Could not restart service (is it enabled?)"
+        jexec "${JAIL_ID}" service chessui reload || echo "Warning: Could not reload service"
         
         echo ">>> DEPLOYMENT COMPLETE <<<"
         exit 0
