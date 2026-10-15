@@ -227,6 +227,7 @@ canvas {
 .captured-pieces {
     display: flex;
     align-items: center;
+    background-color: #7777;
     gap: 2px;
 }
 
