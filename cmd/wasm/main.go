@@ -22,6 +22,7 @@ var (
 	evalScore      float64      = 0.0
 	isGameOver                  = false
 	engineDepth                 = 15
+	engineThreads               = 4
 	isSetupMode                 = false
 	setupSquare    chess.Square = chess.NoSquare
 	setupMap       map[chess.Square]chess.Piece
@@ -53,6 +54,35 @@ var (
 	initialFEN      string
 )
 
+func fetchConfig(callback func()) {
+	js.Global().Call("fetch", "/config").
+		Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+			return args[0].Call("json")
+		})).
+		Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+			config := args[0]
+			if !config.Get("depth").IsUndefined() {
+				engineDepth = config.Get("depth").Int()
+				fmt.Printf("WASM: Configured depth: %d\n", engineDepth)
+			}
+			if !config.Get("threads").IsUndefined() {
+				engineThreads = config.Get("threads").Int()
+				fmt.Printf("WASM: Configured threads: %d\n", engineThreads)
+			}
+			if callback != nil {
+				callback()
+			}
+			return nil
+		})).
+		Call("catch", js.FuncOf(func(this js.Value, args []js.Value) any {
+			fmt.Printf("WASM: Failed to fetch config: %v\n", args[0])
+			if callback != nil {
+				callback()
+			}
+			return nil
+		}))
+}
+
 func main() {
 	game = chess.NewGame()
 	images = make(map[string]js.Value)
@@ -69,7 +99,9 @@ func main() {
 	boardCanvas = doc.Call("getElementById", "chess-board")
 	ctx = boardCanvas.Call("getContext", "2d")
 
-	setupWebSocket()
+	fetchConfig(func() {
+		setupWebSocket()
+	})
 	loadAssets()
 	registerEvents()
 	updateCapturedPieces()

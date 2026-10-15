@@ -60,6 +60,7 @@ func connect(host, roomID string, isSecure bool) {
 		}
 
 		sendUCI("uci")
+		sendUCI(fmt.Sprintf("setoption name Threads value %d", engineThreads))
 		sendUCI("isready")
 		sendUCI("ucinewgame")
 		sendUCI("isready")
