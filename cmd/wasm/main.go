@@ -50,6 +50,7 @@ var (
 	promoTargetSquare chess.Square
 
 	moveAnnotations []string
+	initialFEN      string
 )
 
 func main() {

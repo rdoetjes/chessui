@@ -47,7 +47,8 @@ func handleSetupToggle() {
 		doc.Call("getElementById", "setup-controls").Get("classList").Call("add", "hidden")
 
 		turn := doc.Call("getElementById", "turn-select").Get("value").String()
-		f, _ := chess.FEN(generateFEN(setupMap, turn))
+		initialFEN = generateFEN(setupMap, turn)
+		f, _ := chess.FEN(initialFEN)
 		game = chess.NewGame(f)
 		moveAnnotations = nil
 		handleBotTurn()

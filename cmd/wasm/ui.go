@@ -43,6 +43,7 @@ func registerEvents() {
 		doc.Call("getElementById", "engine-info").Set("innerText", "") // Clear engine info
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 		moveAnnotations = nil
+		initialFEN = ""
 		sendUCI("ucinewgame")
 		updateMoveList()
 		updateCapturedPieces()
@@ -72,7 +73,13 @@ func registerEvents() {
 		}
 
 		// Reset game and re-apply moves
-		game = chess.NewGame()
+		if initialFEN != "" {
+			f, _ := chess.FEN(initialFEN)
+			game = chess.NewGame(f)
+		} else {
+			game = chess.NewGame()
+		}
+
 		for _, m := range newMoves {
 			game.Move(m)
 		}
