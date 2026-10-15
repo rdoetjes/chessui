@@ -63,11 +63,11 @@ func fetchConfig(callback func()) {
 			config := args[0]
 			if !config.Get("depth").IsUndefined() {
 				engineDepth = config.Get("depth").Int()
-				fmt.Printf("WASM: Configured depth: %d\n", engineDepth)
+				fmt.Printf("WASM: Updated engineDepth to %d from server\n", engineDepth)
 			}
 			if !config.Get("threads").IsUndefined() {
 				engineThreads = config.Get("threads").Int()
-				fmt.Printf("WASM: Configured threads: %d\n", engineThreads)
+				fmt.Printf("WASM: Updated engineThreads to %d from server\n", engineThreads)
 			}
 			if callback != nil {
 				callback()

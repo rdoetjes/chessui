@@ -44,12 +44,24 @@ var (
 )
 
 func loadConfig() {
+	// Default values
 	config = Config{StockfishPath: "stockfish", Threads: 4, Depth: 20, Port: 8081}
-	file, err := os.Open("/usr/local/etc/chess-server/config.json")
-	if err == nil {
-		json.NewDecoder(file).Decode(&config)
-		file.Close()
+
+	// Try primary path
+	paths := []string{"/usr/local/etc/chess-server/config.json", "config.json"}
+	for _, path := range paths {
+		file, err := os.Open(path)
+		if err == nil {
+			log.Printf("SERVER: Loading config from %s\n", path)
+			err = json.NewDecoder(file).Decode(&config)
+			file.Close()
+			if err == nil {
+				return
+			}
+			log.Printf("ERROR: Failed to decode config at %s: %v\n", path, err)
+		}
 	}
+	log.Printf("SERVER: Using default configuration (Depth: %d, Port: %d)\n", config.Depth, config.Port)
 }
 
 func handleWS(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +196,11 @@ func main() {
 	})
 	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsDir))))
 	mux.HandleFunc("/ws", handleWS)
-	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) { json.NewEncoder(w).Encode(config) })
+	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("SERVER: Config requested by %s\n", r.RemoteAddr)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(config)
+	})
 
 	log.Printf("SERVER: Listening on http://localhost:%d\n", config.Port)
 	log.Printf("SERVER: Serving web assets from %s\n", absWebDir)
