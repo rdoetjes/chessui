@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grandmaster Chess (v5.5)</title>
+    <title>Grandmaster Chess (v5.6)</title>
     <link rel="stylesheet" href="style.css">
     <script src="wasm_exec.js"></script>
     <style>
-        /* VERSION 5.5 - PORTABLE BUILD */
+        /* VERSION 5.6 - PROXY READY */
         body { 
             background-color: #1a1a1a !important; 
             margin: 0;
@@ -39,11 +39,11 @@
     </style>
 </head>
 <body>
-    <div id="wasm-status">WASM v5.5: LOADING...</div>
+    <div id="wasm-status">WASM v5.6: LOADING...</div>
     <div id="app">
         <div class="sidebar left-sidebar">
             <div class="panel">
-                <h2 style="color: #4CAF50;">Settings (v5.5)</h2>
+                <h2 style="color: #4CAF50;">Settings (v5.6)</h2>
                 <div class="control-group">
                     <label>Style</label>
                     <select id="style-select">
@@ -183,12 +183,12 @@
     </div>
     <script>
         const go = new Go();
-        const v = "5.5-" + new Date().getTime();
-        console.log("WASM: Fetching v5.5 logic...");
+        const v = "5.6-" + new Date().getTime();
+        console.log("WASM: Fetching v5.6 logic...");
         fetch("main.wasm?v=" + v)
             .then(response => WebAssembly.instantiateStreaming(response, go.importObject))
             .then((result) => {
-                console.log("WASM: v5.5 Loaded successfully");
+                console.log("WASM: v5.6 Loaded successfully");
                 go.run(result.instance);
             });
     </script>
