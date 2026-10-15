@@ -10,28 +10,32 @@ JAIL_RC="${JAIL_PATH}/usr/local/etc/rc.d"
 
 case "$1" in
     -jail|jail)
-        echo ">>> STARTING JAIL DEPLOYMENT (v5.10)"
-        echo ">>> Building binaries on host..."
+        echo ">>> STARTING JAIL DEPLOYMENT (v5.17)"
+        echo ">>> Building binaries on host machine..."
         make all
 
-        echo ">>> Creating directories in jail..."
+        echo ">>> Ensuring jail directories exist..."
         mkdir -p "${JAIL_BIN}"
         mkdir -p "${JAIL_WWW}"
         mkdir -p "${JAIL_RC}"
 
-        echo ">>> Copying server to ${JAIL_BIN}..."
+        echo ">>> DEPLOYING SERVER: Copying binary to ${JAIL_BIN}..."
         cp -f chess-server "${JAIL_BIN}/"
         cp -f config.json "${JAIL_BIN}/"
         chmod 755 "${JAIL_BIN}/chess-server"
 
-        echo ">>> Copying web assets to ${JAIL_WWW}..."
-        # Clear old web files to ensure a clean update
+        echo ">>> DEPLOYING WEB: Copying assets to ${JAIL_WWW}..."
+        # We wipe first to ensure no stale files remain
         rm -rf "${JAIL_WWW:?}"/*
-        # Copy the folders themselves, not just contents
-        cp -r web "${JAIL_WWW}/"
+        # Copy CONTENTS of web to JAIL_WWW so index.html is in the root
+        cp -r web/* "${JAIL_WWW}/"
+        # Copy assets folder to JAIL_WWW/assets
         cp -r assets "${JAIL_WWW}/"
+        
+        # Ensure caddy user can read them (if user exists)
+        chown -R 80:80 "${JAIL_WWW}" || echo "Note: Could not set ownership to UID 80 (caddy/www)"
 
-        echo ">>> Installing RC script to ${JAIL_RC}/chess-server..."
+        echo ">>> INSTALLING SERVICE: Creating /usr/local/etc/rc.d/chess-server..."
         cat > "${JAIL_RC}/chess-server" <<EOF
 #!/bin/sh
 #
@@ -45,8 +49,8 @@ name="chess_server"
 rcvar="chess_server_enable"
 
 command="/usr/local/bin/chess-server"
-# The -web flag tells the server where to find the static files
-command_args="-web /usr/local/www/chess/web"
+# The -web flag now points to the root WWW dir
+command_args="-web /usr/local/www/chess"
 pidfile="/var/run/\${name}.pid"
 
 # Run as caddy user inside the jail
@@ -57,7 +61,7 @@ start_cmd="chess_server_start"
 chess_server_start()
 {
     echo "Starting Grandmaster Chess Server..."
-    # Config needs to be in the working directory
+    # Server needs to be in a writable dir or have config nearby
     cd /usr/local/bin
     /usr/sbin/daemon -f -p \${pidfile} -u \${chess_server_user} \${command} \${command_args}
 }
@@ -67,11 +71,10 @@ run_rc_command "\$1"
 EOF
         chmod 555 "${JAIL_RC}/chess-server"
 
-        echo ">>> Restarting Service inside Jail ${JAIL_ID} ---"
-        jexec "${JAIL_ID}" service chess-server restart || echo "Warning: Could not restart service (is it enabled?)"
+        echo ">>> RESTARTING: Executing jexec ${JAIL_ID} service chess-server restart..."
+        jexec "${JAIL_ID}" service chess-server restart || echo "Warning: Could not restart service"
         
-        echo ">>> DEPLOYMENT COMPLETE <<<"
-        echo "Note: Ensure 'chess_server_enable=\"YES\"' is in the jail's /etc/rc.conf"
+        echo ">>> DEPLOYMENT COMPLETE (v5.17) <<<"
         exit 0
         ;;
     *)
