@@ -3,7 +3,7 @@
 }
 
 :root {
-    --bg-color: #0000ff; /* BRIGHT BLUE - VERSION 3 */
+    --bg-color: #1a1a1a;
     --panel-color: #2a2a2a;
     --accent-color: #3d5afe;
     --text-color: #e0e0e0;
@@ -12,17 +12,36 @@
 
 body {
     margin: 0;
+    padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow: hidden;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#wasm-status {
+    height: 45px;
+    line-height: 45px;
+    color: #ffffff !important;
+    font-size: 1.1rem;
+    text-align: left;
+    padding-left: 40px;
+    border-bottom: 3px solid #8888;
+    font-weight: 900;
+    text-shadow: 1px 1px 2px #000;
+    flex-shrink: 0;
+    z-index: 9999;
 }
 
 #app {
     display: flex;
-    height: 100vh;
+    flex: 1;
     width: 100vw;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .sidebar {
@@ -33,24 +52,37 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .right-sidebar {
     border-right: none;
     border-left: 1px solid var(--border-color);
-    height: 100%;
+}
+
+.panel {
+    background-color: #333;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Ensure no overflow */
+    flex-shrink: 0;
 }
 
 .right-sidebar .panel {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    margin-bottom: 0;
-    min-height: 0; /* Important for flex children to shrink */
+    height: 100%;
+    min-height: 0;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    flex-shrink: 0;
 }
 
 #move-list {
@@ -62,7 +94,7 @@ body {
     padding: 5px;
     scrollbar-width: thin;
     scrollbar-color: var(--accent-color) transparent;
-    min-height: 0; /* Allow it to shrink as much as needed */
+    min-height: 0;
 }
 
 #move-list::-webkit-scrollbar {
@@ -83,40 +115,131 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.95rem;
-    display: flex;
-    justify-content: flex-start;
-}
-
-.move-row:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.move-row:last-child {
-    border-bottom: none;
 }
 
 .main-content {
     flex: 1;
     display: flex;
+    background-color: #111;
+    overflow: hidden;
+    position: relative;
+}
+
+.game-container {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+    padding: 0;
+    position: relative;
+}
+
+#eval-bar-container {
+    width: 30px;
+    margin-left: 40px;
+    background-color: #000;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 80px);
+    border: 2px solid #444;
+    flex-shrink: 0;
+}
+
+#eval-bar-background {
+    flex: 1;
+    width: 100%;
+    background-color: #000;
+    display: flex;
+    flex-direction: column-reverse;
+    position: relative;
+}
+
+#eval-white-fill {
+    width: 100%;
+    height: 50%;
+    background-color: #fff;
+    transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.eval-text {
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: white;
+    z-index: 10;
+}
+
+#board-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 20px;
-    background-color: #111;
+    height: 100%;
+    padding: 40px;
+    position: relative;
+    min-width: 0;
 }
 
-.panel {
+#board-wrapper {
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+    position: relative;
     background-color: #333;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    flex-shrink: 1;
 }
 
-h2 {
-    margin-top: 0;
-    font-size: 1.2rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.captured-container {
+    position: absolute;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 40px;
+    background: transparent;
     flex-shrink: 0;
+}
+
+#captured-top {
+    top: 0;
+}
+
+#captured-bottom {
+    bottom: 0;
+}
+
+.captured-pieces {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.captured-pieces img {
+    width: 20px;
+    height: 20px;
+}
+
+.captured-score {
+    font-weight: bold;
+    color: #4caf50;
+    font-size: 0.8rem;
+    font-family: monospace;
 }
 
 .control-group {
@@ -147,97 +270,42 @@ button {
     margin-top: 10px;
     width: 100%;
     transition: background 0.2s;
+    flex-shrink: 0;
 }
 
 button:hover {
     background-color: #536dfe;
 }
 
-.game-container {
-    display: flex;
-    gap: 30px;
-    height: 100%;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-#board-layout {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    justify-content: center;
-    align-items: center;
-}
-
-#eval-bar-container {
-    width: 40px;
-    background-color: #000; /* Black for Black's advantage */
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: calc(60vh + 10px); /* Board + Captured Rows height */
-    max-height: calc(80vw + 80px);
-    border: 2px solid #444;
-}
-
-#eval-bar-background {
-    flex: 1;
-    width: 100%;
-    background-color: #000;
-    display: flex;
-    flex-direction: column-reverse; /* White fills from bottom */
-    position: relative;
-}
-
-#eval-white-fill {
-    width: 100%;
-    height: 50%;
-    background-color: #fff; /* White for White's advantage */
-    transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.eval-text {
-    height: 30px;
-    line-height: 30px;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 900;
-    color: white;
-    z-index: 10;
-}
-
-#board-wrapper {
-    width: 60vh;
-    height: 60vh;
-    max-width: 80vw;
-    max-height: 80vw;
-    position: relative;
-    background-color: #333;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+.suggestion-text {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(61, 90, 254, 0.1);
+    border-left: 3px solid var(--accent-color);
+    font-weight: bold;
+    color: #fff;
+    min-height: 1.2em;
     flex-shrink: 0;
 }
 
-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
+.small-text {
+    margin-top: 5px;
+    font-size: 0.75rem;
+    color: #888;
+    font-family: monospace;
+    flex-shrink: 0;
 }
 
 .hidden {
     display: none !important;
 }
 
-#setup-controls {
-    border: 2px solid #ffeb3b; /* Bright yellow border */
-    padding: 10px;
-    border-radius: 4px;
-    margin-top: 10px;
-    background: rgba(255, 235, 59, 0.1);
+.alert {
+    background: rgba(255, 0, 0, 0.1);
+    border: 1px solid #ff4444;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
 }
 
 .popup {
@@ -255,163 +323,4 @@ canvas {
     display: flex;
     flex-direction: column;
     gap: 15px;
-}
-
-.popup h3 {
-    margin: 0;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
-}
-
-.cancel-btn {
-    background-color: #555;
-    margin-top: 0;
-}
-
-.cancel-btn:hover {
-    background-color: #666;
-}
-
-#host-uuid {
-    font-family: monospace;
-    font-size: 0.8rem;
-    color: #4caf50;
-}
-
-.input-row {
-    display: flex;
-    gap: 5px;
-}
-
-.input-row input {
-    flex: 1;
-    background: #111;
-    border: 1px solid #444;
-    color: white;
-    padding: 5px;
-    border-radius: 4px;
-}
-
-.input-row button {
-    margin-top: 0;
-    width: auto;
-    padding: 5px 10px;
-}
-
-.suggestion-text {
-    margin-top: 10px;
-    padding: 10px;
-    background: rgba(61, 90, 254, 0.1);
-    border-left: 3px solid var(--accent-color);
-    font-weight: bold;
-    color: #fff;
-    min-height: 1.2em;
-    flex-shrink: 0; /* Don't let the suggestion box shrink */
-}
-
-.suggestion-text:empty, .small-text:empty {
-    display: none;
-}
-
-.small-text {
-    margin-top: 5px;
-    font-size: 0.75rem;
-    color: #888;
-    font-family: monospace;
-    flex-shrink: 0; /* Don't let info shrink */
-}
-
-#piece-picker {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.95);
-    padding: 15px;
-    border: 2px solid var(--accent-color);
-    border-radius: 8px;
-    z-index: 200;
-    width: 160px;
-}
-
-.picker-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.picker-piece {
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    border: 1px solid #444;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.white-piece-bg {
-    background: #2c3e50; /* Dark blue-grey for white pieces */
-}
-
-.black-piece-bg {
-    background: #ecf0f1; /* Very light grey for black pieces */
-}
-
-.picker-piece:hover {
-    border-color: var(--accent-color);
-    transform: scale(1.1);
-}
-
-.picker-piece img {
-    width: 32px;
-    height: 32px;
-}
-
-/* Switch styling */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
-  border-radius: 20px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: var(--accent-color);
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
 }
