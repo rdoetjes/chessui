@@ -76,18 +76,24 @@ func updateCapturedPieces() {
 	sortPieces(whitePiecesTakenByBlack)
 	sortPieces(blackPiecesTakenByWhite)
 
+	// Calculate relative advantage
+	// If whiteValueTakenByBlack (Black's advantage) > blackValueTakenByWhite (White's advantage)
+	// then Black is up by the difference.
+	whiteAdv := blackValueTakenByWhite - whiteValueTakenByBlack
+	blackAdv := whiteValueTakenByBlack - blackValueTakenByWhite
+
 	// Who is at the bottom? playerColor.
 	// Who is at the top? Opponent.
 	if playerColor == chess.White {
-		// Bottom is White. Show pieces White has taken (Black pieces).
-		renderCaptured(bottomPiecesDiv, bottomScoreDiv, blackPiecesTakenByWhite, blackValueTakenByWhite)
-		// Top is Black. Show pieces Black has taken (White pieces).
-		renderCaptured(topPiecesDiv, topScoreDiv, whitePiecesTakenByBlack, whiteValueTakenByBlack)
+		// Bottom is White. Show pieces White has taken (Black pieces) and White's advantage.
+		renderCaptured(bottomPiecesDiv, bottomScoreDiv, blackPiecesTakenByWhite, whiteAdv)
+		// Top is Black. Show pieces Black has taken (White pieces) and Black's advantage.
+		renderCaptured(topPiecesDiv, topScoreDiv, whitePiecesTakenByBlack, blackAdv)
 	} else {
-		// Bottom is Black. Show pieces Black has taken (White pieces).
-		renderCaptured(bottomPiecesDiv, bottomScoreDiv, whitePiecesTakenByBlack, whiteValueTakenByBlack)
-		// Top is White. Show pieces White has taken (Black pieces).
-		renderCaptured(topPiecesDiv, topScoreDiv, blackPiecesTakenByWhite, blackValueTakenByWhite)
+		// Bottom is Black. Show pieces Black has taken (White pieces) and Black's advantage.
+		renderCaptured(bottomPiecesDiv, bottomScoreDiv, whitePiecesTakenByBlack, blackAdv)
+		// Top is White. Show pieces White has taken (Black pieces) and White's advantage.
+		renderCaptured(topPiecesDiv, topScoreDiv, blackPiecesTakenByWhite, whiteAdv)
 	}
 }
 
@@ -97,7 +103,7 @@ func sortPieces(pieces []chess.Piece) {
 	})
 }
 
-func renderCaptured(piecesDiv, scoreDiv js.Value, pieces []chess.Piece, totalValue int) {
+func renderCaptured(piecesDiv, scoreDiv js.Value, pieces []chess.Piece, relativeValue int) {
 	doc := js.Global().Get("document")
 	for _, p := range pieces {
 		pStr := "w"
@@ -127,8 +133,8 @@ func renderCaptured(piecesDiv, scoreDiv js.Value, pieces []chess.Piece, totalVal
 		piecesDiv.Call("appendChild", img)
 	}
 
-	if len(pieces) > 0 {
-		scoreDiv.Set("innerText", fmt.Sprintf("+%d", totalValue))
+	if relativeValue > 0 {
+		scoreDiv.Set("innerText", fmt.Sprintf("+%d", relativeValue))
 		scoreDiv.Get("style").Set("display", "inline-block")
 	} else {
 		scoreDiv.Set("innerText", "")
