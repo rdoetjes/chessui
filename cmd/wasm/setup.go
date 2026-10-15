@@ -86,6 +86,11 @@ func initPiecePicker() {
 }
 
 func handlePickerSelect(pStr string) {
+	if isPromotionMode {
+		completePromotion(pStr)
+		return
+	}
+
 	var piece chess.Piece = chess.NoPiece
 	switch pStr {
 	case "wp":
@@ -134,4 +139,49 @@ func handlePickerSelect(pStr string) {
 	game = chess.NewGame(f)
 
 	js.Global().Get("document").Call("getElementById", "piece-picker").Get("classList").Call("add", "hidden")
+}
+
+func showPromotionPicker(color chess.Color) {
+	doc := js.Global().Get("document")
+	picker := doc.Call("getElementById", "piece-picker").Call("querySelector", ".picker-grid")
+	picker.Set("innerHTML", "")
+
+	cStr := "w"
+	if color == chess.Black {
+		cStr = "b"
+	}
+
+	pieces := []string{cStr + "q", cStr + "r", cStr + "b", cStr + "n"}
+	for _, p := range pieces {
+		div := doc.Call("createElement", "div")
+		div.Get("classList").Call("add", "picker-piece")
+		if color == chess.Black {
+			div.Get("classList").Call("add", "black-piece-bg")
+		} else {
+			div.Get("classList").Call("add", "white-piece-bg")
+		}
+
+		img := doc.Call("createElement", "img")
+		img.Set("src", fmt.Sprintf("/assets/pieces/%s/%s.png", currentStyle, p))
+		div.Call("appendChild", img)
+
+		pt := p
+		div.Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+			handlePickerSelect(pt)
+			return nil
+		}))
+		picker.Call("appendChild", div)
+	}
+
+	doc.Call("getElementById", "piece-picker").Get("classList").Call("remove", "hidden")
+}
+
+func completePromotion(pStr string) {
+	promoChar := string(pStr[1]) // q, r, b, n
+	moveStr := fmt.Sprintf("%s%s%s", promoSourceSquare.String(), promoTargetSquare.String(), promoChar)
+
+	isPromotionMode = false
+	js.Global().Get("document").Call("getElementById", "piece-picker").Get("classList").Call("add", "hidden")
+
+	executeMove(moveStr, true)
 }

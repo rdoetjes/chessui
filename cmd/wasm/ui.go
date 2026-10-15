@@ -93,6 +93,7 @@ func registerEvents() {
 
 	doc.Call("getElementById", "close-picker").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		doc.Call("getElementById", "piece-picker").Get("classList").Call("add", "hidden")
+		isPromotionMode = false
 		return nil
 	}))
 

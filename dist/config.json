@@ -1,6 +1,6 @@
 {
     "stockfish_path": "stockfish",
-    "threads": 2,
-    "depth": 10,
+    "threads": 8,
+    "depth": 20,
     "port": 8081
 }

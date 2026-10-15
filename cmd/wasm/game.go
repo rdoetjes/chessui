@@ -90,16 +90,21 @@ func handleBoardClick(col, row int) {
 			selectedPos = sq
 		}
 	} else {
-		var targetStr string
+		var targetMoves []*chess.Move
 		for _, m := range game.ValidMoves() {
 			if m.S1() == selectedPos && m.S2() == sq {
-				targetStr = m.String()
-				break
+				targetMoves = append(targetMoves, m)
 			}
 		}
 
-		if targetStr != "" {
-			executeMove(targetStr, true) // true = relay if multiplayer
+		if len(targetMoves) == 1 {
+			executeMove(targetMoves[0].String(), true)
+		} else if len(targetMoves) > 1 {
+			// Promotion detected
+			isPromotionMode = true
+			promoSourceSquare = selectedPos
+			promoTargetSquare = sq
+			showPromotionPicker(turn)
 		} else {
 			p := game.Position().Board().Piece(sq)
 			if p != chess.NoPiece && p.Color() == turn {

@@ -41,6 +41,11 @@ var (
 	animDuration  = 200.0 // milliseconds
 
 	lastHumanSuggestion string
+
+	// Promotion State
+	isPromotionMode   bool
+	promoSourceSquare chess.Square
+	promoTargetSquare chess.Square
 )
 
 func main() {
@@ -49,12 +54,12 @@ func main() {
 	setupMap = make(map[chess.Square]chess.Piece)
 
 	fmt.Println("WASM: Version 4.8 - High Visibility Status")
-	fmt.Println("WASM: Version 5.3 - Checkmate Overlay Active")
+	fmt.Println("WASM: Version 5.5 - FreeBSD Makefile Fix")
 
 	doc := js.Global().Get("document")
 	statusLine := doc.Call("getElementById", "wasm-status")
 	if !statusLine.IsNull() {
-		statusLine.Set("innerText", "WASM v5.3 - CHECKMATE OVERLAY READY")
+		statusLine.Set("innerText", "WASM v5.5 - PORTABLE BUILD READY")
 	}
 
 	boardCanvas = doc.Call("getElementById", "chess-board")
