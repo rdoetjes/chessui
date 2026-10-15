@@ -38,6 +38,9 @@ func registerEvents() {
 		game = chess.NewGame()
 		lastMove = nil
 		isGameOver = false
+		lastHumanSuggestion = ""                                       // Reset suggestion data
+		showSuggestion("")                                             // Clear suggestion UI
+		doc.Call("getElementById", "engine-info").Set("innerText", "") // Clear engine info
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 		sendUCI("ucinewgame")
 		updateMoveList()
