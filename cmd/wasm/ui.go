@@ -174,6 +174,23 @@ func registerEvents() {
 		return nil
 	}))
 
+	doc.Call("getElementById", "copy-pgn").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		// Create a PGN with standard headers
+		pgn := fmt.Sprintf("[Event \"Casual Game\"]\n[Site \"chess.phonax.com\"]\n[Date \"??.??.??\"]\n[White \"Player\"]\n[Black \"Stockfish\"]\n[Result \"*\"]\n\n%s", game.String())
+
+		js.Global().Get("navigator").Get("clipboard").Call("writeText", pgn)
+
+		// Optional: Change button text briefly to show success
+		btn := doc.Call("getElementById", "copy-pgn")
+		oldText := btn.Get("innerText").String()
+		btn.Set("innerText", "Copied!")
+		js.Global().Call("setTimeout", js.FuncOf(func(this js.Value, args []js.Value) any {
+			btn.Set("innerText", oldText)
+			return nil
+		}), 2000)
+		return nil
+	}))
+
 	initPiecePicker()
 }
 
