@@ -10,7 +10,7 @@ JAIL_RC="${JAIL_PATH}/usr/local/etc/rc.d"
 
 case "$1" in
     -jail|jail)
-        echo ">>> STARTING JAIL DEPLOYMENT (v5.18)"
+        echo ">>> STARTING JAIL DEPLOYMENT (v5.19)"
         echo ">>> Building binaries on host machine..."
         make all
 
@@ -73,7 +73,7 @@ EOF
         echo ">>> RESTARTING: Executing jexec ${JAIL_ID} service chess-server restart..."
         jexec "${JAIL_ID}" service chess-server restart || echo "Warning: Could not restart service"
         
-        echo ">>> DEPLOYMENT COMPLETE (v5.18) <<<"
+        echo ">>> DEPLOYMENT COMPLETE (v5.19) <<<"
         exit 0
         ;;
     *)

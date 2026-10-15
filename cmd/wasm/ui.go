@@ -182,7 +182,7 @@ func loadAssets() {
 	fmt.Printf("WASM: Loading %d assets for style %s...\n", len(pieces), currentStyle)
 	for _, p := range pieces {
 		img := js.Global().Get("Image").New()
-		# Use relative path (no leading slash) so it works in subdirectories like /web/
+		// Use relative path (no leading slash) so it works in subdirectories like /web/
 		src := fmt.Sprintf("assets/pieces/%s/%s.png", currentStyle, p)
 		img.Set("src", src)
 		images[p] = img

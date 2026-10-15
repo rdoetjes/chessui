@@ -120,7 +120,7 @@ func renderCaptured(piecesDiv, scoreDiv js.Value, pieces []chess.Piece, totalVal
 		}
 
 		img := doc.Call("createElement", "img")
-		# Use relative path (no leading slash)
+		// Use relative path (no leading slash)
 		img.Set("src", fmt.Sprintf("assets/pieces/%s/%s.png", currentStyle, pStr))
 		img.Get("style").Set("width", "24px")
 		img.Get("style").Set("height", "24px")
