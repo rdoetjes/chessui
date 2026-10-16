@@ -44,6 +44,12 @@ func main() {
 		if style == "standard" {
 			light = color.RGBA{235, 236, 208, 255} // Classic Cream
 			dark = color.RGBA{119, 149, 86, 255}   // Classic Green
+		} else if style == "classic" {
+			light = color.RGBA{240, 217, 181, 255} // Wood Light
+			dark = color.RGBA{181, 136, 99, 255}   // Wood Dark
+		} else if style == "modern" {
+			light = color.RGBA{220, 220, 220, 255} // Off-white
+			dark = color.RGBA{20, 20, 20, 255}     // Near black
 		}
 
 		tileSize := 4096 / 8
@@ -55,6 +61,23 @@ func main() {
 				}
 				rect := image.Rect(x*tileSize, y*tileSize, (x+1)*tileSize, (y+1)*tileSize)
 				draw.Draw(boardImg, rect, &image.Uniform{c}, image.Point{}, draw.Src)
+			}
+		}
+
+		// Add diagonal lines for modern style
+		if style == "modern" {
+			for y := 0; y < 4096; y++ {
+				for x := 0; x < 4096; x++ {
+					// Diagonal pattern
+					if (x+y)%100 < 5 {
+						r, g, b, a := boardImg.At(x, y).RGBA()
+						// Darken the color slightly for the line
+						nr := uint8((r >> 8) * 8 / 10)
+						ng := uint8((g >> 8) * 8 / 10)
+						nb := uint8((b >> 8) * 8 / 10)
+						boardImg.Set(x, y, color.RGBA{nr, ng, nb, uint8(a >> 8)})
+					}
+				}
 			}
 		}
 		f, _ := os.Create(filepath.Join(baseDir, "board.png"))
