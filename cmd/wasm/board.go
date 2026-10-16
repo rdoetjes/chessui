@@ -39,20 +39,28 @@ func drawBoard() {
 
 	size, tileSize := w, w/8
 
-	// Clear
-	ctx.Set("fillStyle", "#000")
-	ctx.Call("fillRect", 0, 0, size, size)
+	// 1. Draw the board background image
+	if img, ok := images["board"]; ok && img.Get("complete").Bool() && img.Get("naturalWidth").Int() > 0 {
+		ctx.Call("drawImage", img, 0, 0, size, size)
+	} else {
+		// Fallback to manual drawing if image not loaded
+		for screenY := 0; screenY < 8; screenY++ {
+			for screenX := 0; screenX < 8; screenX++ {
+				isLight := (screenX+screenY)%2 == 0
+				if isLight {
+					ctx.Set("fillStyle", "#b5b5b5")
+				} else {
+					ctx.Set("fillStyle", "#555555")
+				}
+				ctx.Call("fillRect", float64(screenX)*tileSize, float64(screenY)*tileSize, tileSize, tileSize)
+			}
+		}
+	}
 
-	// Draw squares and coordinates
+	// 2. Draw coordinates
 	for screenY := 0; screenY < 8; screenY++ {
 		for screenX := 0; screenX < 8; screenX++ {
 			isLight := (screenX+screenY)%2 == 0
-			if isLight {
-				ctx.Set("fillStyle", "#b5b5b5") // Darker "light" square
-			} else {
-				ctx.Set("fillStyle", "#555555") // True dark charcoal
-			}
-			ctx.Call("fillRect", float64(screenX)*tileSize, float64(screenY)*tileSize, tileSize, tileSize)
 
 			// Determine logical coords for labels
 			fileIdx, rankIdx := screenX, 7-screenY
@@ -61,21 +69,34 @@ func drawBoard() {
 			}
 
 			ctx.Set("font", "bold 12px Arial")
+
+			// Handle coordinate colors based on theme
+			coordColorLight := "#555555"
+			coordColorDark := "#b5b5b5"
+
+			if currentStyle == "modern" {
+				coordColorLight = "#ff3d3d"
+				coordColorDark = "#ff3d3d"
+			} else if currentStyle == "classic" {
+				coordColorLight = "#3d2b1f"
+				coordColorDark = "#f5deb3"
+			}
+
 			if screenX == 0 {
 				label := fmt.Sprintf("%d", rankIdx+1)
 				if isLight {
-					ctx.Set("fillStyle", "#555555")
+					ctx.Set("fillStyle", coordColorLight)
 				} else {
-					ctx.Set("fillStyle", "#b5b5b5")
+					ctx.Set("fillStyle", coordColorDark)
 				}
 				ctx.Call("fillText", label, 2.0, float64(screenY)*tileSize+12.0)
 			}
 			if screenY == 7 {
 				label := string(rune('a' + fileIdx))
 				if isLight {
-					ctx.Set("fillStyle", "#555555")
+					ctx.Set("fillStyle", coordColorLight)
 				} else {
-					ctx.Set("fillStyle", "#b5b5b5")
+					ctx.Set("fillStyle", coordColorDark)
 				}
 				ctx.Call("fillText", label, float64(screenX+1)*tileSize-10.0, float64(screenY+1)*tileSize-4.0)
 			}
