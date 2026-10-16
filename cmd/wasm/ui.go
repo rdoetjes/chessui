@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"syscall/js"
 
 	"github.com/notnil/chess"
@@ -197,6 +198,18 @@ func registerEvents() {
 		return nil
 	}))
 
+	// Move List Click (Event Delegation)
+	doc.Call("getElementById", "move-list").Call("addEventListener", "click", js.FuncOf(func(this js.Value, args []js.Value) any {
+		event := args[0]
+		target := event.Get("target")
+		if !target.Get("dataset").Get("index").IsUndefined() {
+			indexStr := target.Get("dataset").Get("index").String()
+			index, _ := strconv.Atoi(indexStr)
+			jumpToMove(index)
+		}
+		return nil
+	}))
+
 	initPiecePicker()
 }
 
@@ -205,31 +218,97 @@ func updateMoveList() {
 	list := doc.Call("getElementById", "move-list")
 	list.Set("innerHTML", "")
 	moves := game.Moves()
+	currentMoveIdx := len(moves) - 1
+
 	for i := 0; i < len(moves); i += 2 {
 		div := doc.Call("createElement", "div")
 		div.Get("classList").Call("add", "move-row")
+
+		// Move Number
+		numSpan := doc.Call("createElement", "span")
+		numSpan.Set("innerText", fmt.Sprintf("%d. ", (i/2)+1))
+		numSpan.Get("style").Set("color", "#888")
+		numSpan.Get("style").Set("marginRight", "5px")
+		div.Call("appendChild", numSpan)
 
 		// Move 1
 		m1 := moves[i].String()
 		if i < len(moveAnnotations) && moveAnnotations[i] != "" {
 			m1 += " " + moveAnnotations[i]
 		}
-
-		text := fmt.Sprintf("%d. %s", (i/2)+1, m1)
+		s1 := doc.Call("createElement", "span")
+		s1.Get("classList").Call("add", "move-item")
+		if i == currentMoveIdx {
+			s1.Get("classList").Call("add", "current-move")
+		}
+		s1.Get("dataset").Set("index", i)
+		s1.Set("innerText", m1)
+		div.Call("appendChild", s1)
 
 		// Move 2
 		if i+1 < len(moves) {
+			// Spacer
+			div.Call("appendChild", doc.Call("createTextNode", " "))
+
 			m2 := moves[i+1].String()
 			if i+1 < len(moveAnnotations) && moveAnnotations[i+1] != "" {
 				m2 += " " + moveAnnotations[i+1]
 			}
-			text += " " + m2
+			s2 := doc.Call("createElement", "span")
+			s2.Get("classList").Call("add", "move-item")
+			if i+1 == currentMoveIdx {
+				s2.Get("classList").Call("add", "current-move")
+			}
+			s2.Get("dataset").Set("index", i+1)
+			s2.Set("innerText", m2)
+			div.Call("appendChild", s2)
 		}
-		div.Set("innerText", text)
+
 		list.Call("appendChild", div)
 	}
 	// Scroll to bottom
 	list.Set("scrollTop", list.Get("scrollHeight"))
+}
+
+func jumpToMove(index int) {
+	allMoves := game.Moves()
+	if index < 0 || index >= len(allMoves) {
+		return
+	}
+
+	// We only keep moves up to the point we clicked
+	newMoves := allMoves[:index+1]
+
+	// Truncate annotations to match
+	if len(moveAnnotations) > len(newMoves) {
+		moveAnnotations = moveAnnotations[:len(newMoves)]
+	}
+
+	// Reset game and re-apply moves
+	if initialFEN != "" {
+		f, _ := chess.FEN(initialFEN)
+		game = chess.NewGame(f)
+	} else {
+		game = chess.NewGame()
+	}
+
+	for _, m := range newMoves {
+		game.Move(m)
+	}
+
+	// Update UI state
+	lastMove = nil
+	if len(newMoves) > 0 {
+		lastMove = newMoves[len(newMoves)-1]
+	}
+
+	isGameOver = false
+	doc := js.Global().Get("document")
+	doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
+
+	updateMoveList()
+	updateCapturedPieces()
+	handleBotTurn()
 }
 
 func applyStyleClass(style string) {

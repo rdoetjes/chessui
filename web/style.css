@@ -183,6 +183,25 @@ h2 {
     font-size: 0.95rem;
 }
 
+.move-item {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.move-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+
+.move-item.current-move {
+    background: var(--accent-color);
+    color: #fff;
+    font-weight: bold;
+}
+
 .main-content {
     flex: 1;
     display: flex;
