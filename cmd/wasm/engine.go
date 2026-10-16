@@ -138,7 +138,8 @@ func processUCIResponse(msg string) {
 		updateEvalBar()
 
 		// Check for move quality on the move just made
-		if len(moveAnnotations) > 0 && lastMoveSide == playerColor {
+		// Only rate if we have reached a reasonable depth to avoid noise
+		if info.Depth >= 8 && len(moveAnnotations) > 0 && lastMoveSide == playerColor {
 			lastIdx := len(moveAnnotations) - 1
 			var diff float64
 			if lastMoveSide == chess.White {
@@ -148,7 +149,9 @@ func processUCIResponse(msg string) {
 			}
 
 			rating := colorMoveRating(diff)
-			if rating != "" {
+			// Never downgrade an 'Excellent' (Best) move
+			// Only apply rating if it's "worse" than what's already there (or if nothing is there)
+			if rating != "" && moveAnnotations[lastIdx] != "🟢" {
 				moveAnnotations[lastIdx] = rating
 				updateMoveList()
 			}
@@ -207,13 +210,16 @@ func sendUCI(msg string) {
 }
 
 func colorMoveRating(diff float64) string {
-	if diff < -2.0 {
+	if diff < -2.5 {
 		return "🔴"
 	}
-	if diff < -0.8 {
+	if diff < -1.2 {
+		return "🟡"
+	}
+	if diff < -0.6 {
 		return "🟠"
 	}
-	if diff > 0.4 {
+	if diff > 0.2 {
 		return "🟢"
 	}
 	return ""
