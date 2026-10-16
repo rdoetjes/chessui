@@ -250,6 +250,17 @@ func registerEvents() {
 	}))
 
 	initPiecePicker()
+
+	// Test Sound Debug Button
+	doc.Call("getElementById", "test-sound").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		fmt.Println("WASM: Testing Move Sound...")
+		audio := doc.Call("getElementById", "snd-move")
+		if !audio.IsNull() {
+			audio.Set("currentTime", 0)
+			audio.Call("play")
+		}
+		return nil
+	}))
 }
 
 func updateMoveList() {
@@ -332,13 +343,19 @@ func updateMoveList() {
 }
 
 func jumpToMove(index int) {
-	// Update view state
-	currentViewIndex = index
+	moves := game.Moves()
+	// If we click the very last move, we go back to "Live" mode
+	if index == len(moves)-1 {
+		currentViewIndex = -1
+	} else {
+		currentViewIndex = index
+	}
+
 	if index == -1 {
 		// Special case: if we are at -1 but there ARE moves,
 		// we want to show the initial position, so we use a special marker
 		// unless the game is actually empty.
-		if len(game.Moves()) > 0 {
+		if len(moves) > 0 {
 			currentViewIndex = -2 // Internal marker for "Initial Position"
 		}
 	}
@@ -349,6 +366,11 @@ func jumpToMove(index int) {
 	doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 	updateMoveList()
+
+	// Only trigger bot if we are back in "Live" mode
+	if currentViewIndex == -1 {
+		handleBotTurn()
+	}
 }
 
 func applyStyleClass(style string) {

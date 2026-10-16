@@ -24,15 +24,15 @@ case "$1" in
         cp -f config.json "${JAIL_BIN}/"
         chmod 755 "${JAIL_BIN}/chess-server"
 
-        echo ">>> DEPLOYING WEB: Copying assets to ${JAIL_WWW}..."
-        # Clear old web files to ensure a clean update
-        rm -rf "${JAIL_WWW:?}"/*
-        # Copy web CONTENTS directly to JAIL_WWW root
-        cp -r web/* "${JAIL_WWW}/"
-        # Copy assets folder to JAIL_WWW
-        cp -r assets "${JAIL_WWW}/"
-        
-        # Ensure correct permissions
+        	echo ">>> DEPLOYING WEB: Copying assets to ${JAIL_WWW}..."
+        	# Clear old web files to ensure a clean update
+        	rm -rf "${JAIL_WWW:?}"/*
+        	# Copy web CONTENTS directly to JAIL_WWW root
+        	cp -r web/* "${JAIL_WWW}/"
+        	# Copy assets folder to JAIL_WWW
+        	cp -r assets "${JAIL_WWW}/"
+        	
+        	# Ensure correct permissions
         chown -R 80:80 "${JAIL_WWW}" || echo "Note: Could not set ownership"
 
         echo ">>> INSTALLING SERVICE: Creating /usr/local/etc/rc.d/chess-server..."

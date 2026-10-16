@@ -98,6 +98,7 @@ func executeMove(moveStr string, relay bool) {
 			lastMove = target
 			updateMoveList()
 			checkGameState()
+			playSound(target)
 
 			// Clear selection
 			selectedPos = chess.NoSquare
@@ -213,4 +214,29 @@ func truncateGameAt(index int) {
 	// Invalidate view cache
 	cachedViewIndex = -2
 	cachedViewGame = nil
+}
+
+func playSound(m *chess.Move) {
+	doc := js.Global().Get("document")
+	var audio js.Value
+
+	if m.HasTag(chess.Check) {
+		audio = doc.Call("getElementById", "snd-check")
+	} else if m.HasTag(chess.Capture) || m.HasTag(chess.EnPassant) {
+		audio = doc.Call("getElementById", "snd-capture")
+	} else {
+		audio = doc.Call("getElementById", "snd-move")
+	}
+
+	if !audio.IsUndefined() && !audio.IsNull() {
+		// Reset current time to allow playing overlapping sounds
+		audio.Set("currentTime", 0)
+		promise := audio.Call("play")
+		if !promise.IsUndefined() {
+			promise.Call("catch", js.FuncOf(func(this js.Value, args []js.Value) any {
+				// Browsers block audio until first interaction
+				return nil
+			}))
+		}
+	}
 }
