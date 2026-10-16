@@ -1,4 +1,4 @@
-# ♟️ Grandmaster Chess UI
+# ![Chess Pieces](assets/pieces/standard/wq.png) Grandmaster Chess UI
 
 A professional, high-performance Chess interface powered by **Go**, **WebAssembly**, and **Stockfish**. This project provides a sleek, modern experience for playing chess against an engine or other humans, featuring real-time move analysis and multiple visual themes.
 
