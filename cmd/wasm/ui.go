@@ -241,14 +241,10 @@ func applyStyleClass(style string) {
 func loadAssets() {
 	pieces := []string{"wp", "wn", "wb", "wr", "wq", "wk", "bp", "bn", "bb", "br", "bq", "bk", "board"}
 	fmt.Printf("WASM: Loading %d assets for style %s...\n", len(pieces), currentStyle)
-
-	// Use a timestamp for cache busting
-	ts := js.Global().Get("Date").New().Call("getTime").String()
-
 	for _, p := range pieces {
 		img := js.Global().Get("Image").New()
-		// Use relative path with cache-busting timestamp
-		src := fmt.Sprintf("assets/pieces/%s/%s.png?v=%s", currentStyle, p, ts)
+		// Use relative path (no leading slash) so it works in subdirectories like /web/
+		src := fmt.Sprintf("assets/pieces/%s/%s.png", currentStyle, p)
 		img.Set("src", src)
 		images[p] = img
 
