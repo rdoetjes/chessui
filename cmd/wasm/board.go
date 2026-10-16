@@ -103,20 +103,26 @@ func drawBoard() {
 		}
 	}
 
-	if lastMove != nil && !isSetupMode {
+	viewGame := getViewGame()
+	viewPos := viewGame.Position()
+	lastMoveInView := lastMove
+	if currentViewIndex != -1 && currentViewIndex < len(game.Moves()) {
+		lastMoveInView = game.Moves()[currentViewIndex]
+	}
+
+	if lastMoveInView != nil && !isSetupMode {
 		ctx.Set("fillStyle", "rgba(255, 170, 0, 0.4)") // Pale Orange highlight
-		x1, y1 := getXY(int(lastMove.S1().File()), int(lastMove.S1().Rank()), tileSize)
-		x2, y2 := getXY(int(lastMove.S2().File()), int(lastMove.S2().Rank()), tileSize)
+		x1, y1 := getXY(int(lastMoveInView.S1().File()), int(lastMoveInView.S1().Rank()), tileSize)
+		x2, y2 := getXY(int(lastMoveInView.S2().File()), int(lastMoveInView.S2().Rank()), tileSize)
 		ctx.Call("fillRect", x1, y1, tileSize, tileSize)
 		ctx.Call("fillRect", x2, y2, tileSize, tileSize)
 	}
 
 	// Check / Checkmate highlight
-	pos := game.Position()
-	status := pos.Status()
-	if !isSetupMode && (status == chess.Checkmate || (lastMove != nil && lastMove.HasTag(chess.Check))) {
-		board := pos.Board()
-		turn := pos.Turn()
+	status := viewPos.Status()
+	if !isSetupMode && (status == chess.Checkmate || (lastMoveInView != nil && lastMoveInView.HasTag(chess.Check))) {
+		board := viewPos.Board()
+		turn := viewPos.Turn()
 		for i := 0; i < 64; i++ {
 			sq := chess.Square(i)
 			p := board.Piece(sq)
@@ -134,13 +140,13 @@ func drawBoard() {
 			drawPieceAt(sq, p, tileSize)
 		}
 	} else {
-		board := game.Position().Board()
+		board := viewPos.Board()
 		for i := 0; i < 64; i++ {
 			sq := chess.Square(i)
 			p := board.Piece(sq)
 
-			// Skip drawing the piece if it's currently animating
-			if animProgress < 1.0 && animMove != nil && sq == animMove.S2() {
+			// Skip drawing the piece if it's currently animating (only if viewing latest)
+			if currentViewIndex == -1 && animProgress < 1.0 && animMove != nil && sq == animMove.S2() {
 				continue
 			}
 
@@ -149,8 +155,8 @@ func drawBoard() {
 			}
 		}
 
-		// Draw the animating piece
-		if animProgress < 1.0 && animMove != nil {
+		// Draw the animating piece (only if viewing latest)
+		if currentViewIndex == -1 && animProgress < 1.0 && animMove != nil {
 			x1, y1 := getXY(int(animMove.S1().File()), int(animMove.S1().Rank()), tileSize)
 			x2, y2 := getXY(int(animMove.S2().File()), int(animMove.S2().Rank()), tileSize)
 
@@ -166,7 +172,7 @@ func drawBoard() {
 		ctx.Set("fillStyle", "rgba(0, 255, 0, 0.3)")
 		ctx.Call("fillRect", x, y, tileSize, tileSize)
 		ctx.Set("fillStyle", "rgba(255, 0, 0, 0.4)")
-		for _, m := range game.ValidMoves() {
+		for _, m := range viewGame.ValidMoves() {
 			if m.S1() == selectedPos {
 				targetX, targetY := getXY(int(m.S2().File()), int(m.S2().Rank()), tileSize)
 				ctx.Call("beginPath")
@@ -177,7 +183,7 @@ func drawBoard() {
 	}
 
 	// Game Over Overlay
-	if isGameOver {
+	if isGameOver && currentViewIndex == -1 {
 		ctx.Set("fillStyle", "rgba(0, 0, 0, 0.5)")
 		ctx.Call("fillRect", 0, 0, size, size)
 
@@ -186,7 +192,7 @@ func drawBoard() {
 		ctx.Set("font", "bold 60px Arial")
 
 		msg := "GAME OVER"
-		if game.Position().Status() == chess.Checkmate {
+		if viewPos.Status() == chess.Checkmate {
 			msg = "CHECKMATE"
 			ctx.Set("fillStyle", "#ff4444")
 		}

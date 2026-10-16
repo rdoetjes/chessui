@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"syscall/js"
 
 	"github.com/notnil/chess"
@@ -39,6 +40,8 @@ func registerEvents() {
 		game = chess.NewGame()
 		lastMove = nil
 		isGameOver = false
+		currentViewIndex = -1
+		cachedViewIndex = -2
 		lastHumanSuggestion = ""                                       // Reset suggestion data
 		showSuggestion("")                                             // Clear suggestion UI
 		doc.Call("getElementById", "engine-info").Set("innerText", "") // Clear engine info
@@ -91,6 +94,8 @@ func registerEvents() {
 		}
 
 		isGameOver = false
+		currentViewIndex = -1
+		cachedViewIndex = -2
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 		updateMoveList()
@@ -198,6 +203,40 @@ func registerEvents() {
 		return nil
 	}))
 
+	doc.Call("getElementById", "import-pgn").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		go func() {
+			promise := js.Global().Get("navigator").Get("clipboard").Call("readText")
+			success := js.FuncOf(func(this js.Value, args []js.Value) any {
+				pgnText := args[0].String()
+				if pgnText == "" {
+					return nil
+				}
+
+				f, err := chess.PGN(strings.NewReader(pgnText))
+				if err != nil {
+					fmt.Printf("WASM: PGN Import Error: %v\n", err)
+					return nil
+				}
+
+				game = chess.NewGame(f)
+				moveAnnotations = nil
+				currentViewIndex = -1 // Go to latest move
+				lastMove = nil
+				if moves := game.Moves(); len(moves) > 0 {
+					lastMove = moves[len(moves)-1]
+				}
+
+				isGameOver = false
+				updateMoveList()
+				updateCapturedPieces()
+				handleBotTurn()
+				return nil
+			})
+			promise.Call("then", success)
+		}()
+		return nil
+	}))
+
 	// Move List Click (Event Delegation)
 	doc.Call("getElementById", "move-list").Call("addEventListener", "click", js.FuncOf(func(this js.Value, args []js.Value) any {
 		event := args[0]
@@ -218,7 +257,27 @@ func updateMoveList() {
 	list := doc.Call("getElementById", "move-list")
 	list.Set("innerHTML", "")
 	moves := game.Moves()
-	currentMoveIdx := len(moves) - 1
+
+	// Initial Position item
+	startDiv := doc.Call("createElement", "div")
+	startDiv.Get("classList").Call("add", "move-row")
+	startSpan := doc.Call("createElement", "span")
+	startSpan.Get("classList").Call("add", "move-item")
+	if currentViewIndex == -1 && len(moves) == 0 {
+		startSpan.Get("classList").Call("add", "current-move")
+	} else if currentViewIndex == -2 { // -2 means we clicked the start
+		startSpan.Get("classList").Call("add", "current-move")
+	}
+	startSpan.Get("dataset").Set("index", "-1")
+	startSpan.Set("innerText", "🎬 Game Start")
+	startDiv.Call("appendChild", startSpan)
+	list.Call("appendChild", startDiv)
+
+	// If currentViewIndex is -1, we are viewing the latest move
+	highlightIdx := currentViewIndex
+	if highlightIdx == -1 {
+		highlightIdx = len(moves) - 1
+	}
 
 	for i := 0; i < len(moves); i += 2 {
 		div := doc.Call("createElement", "div")
@@ -238,7 +297,7 @@ func updateMoveList() {
 		}
 		s1 := doc.Call("createElement", "span")
 		s1.Get("classList").Call("add", "move-item")
-		if i == currentMoveIdx {
+		if i == highlightIdx {
 			s1.Get("classList").Call("add", "current-move")
 		}
 		s1.Get("dataset").Set("index", i)
@@ -256,7 +315,7 @@ func updateMoveList() {
 			}
 			s2 := doc.Call("createElement", "span")
 			s2.Get("classList").Call("add", "move-item")
-			if i+1 == currentMoveIdx {
+			if i+1 == highlightIdx {
 				s2.Get("classList").Call("add", "current-move")
 			}
 			s2.Get("dataset").Set("index", i+1)
@@ -266,49 +325,30 @@ func updateMoveList() {
 
 		list.Call("appendChild", div)
 	}
-	// Scroll to bottom
-	list.Set("scrollTop", list.Get("scrollHeight"))
+	// Scroll to bottom only if we're at the latest move
+	if currentViewIndex == -1 {
+		list.Set("scrollTop", list.Get("scrollHeight"))
+	}
 }
 
 func jumpToMove(index int) {
-	allMoves := game.Moves()
-	if index < 0 || index >= len(allMoves) {
-		return
+	// Update view state
+	currentViewIndex = index
+	if index == -1 {
+		// Special case: if we are at -1 but there ARE moves,
+		// we want to show the initial position, so we use a special marker
+		// unless the game is actually empty.
+		if len(game.Moves()) > 0 {
+			currentViewIndex = -2 // Internal marker for "Initial Position"
+		}
 	}
 
-	// We only keep moves up to the point we clicked
-	newMoves := allMoves[:index+1]
-
-	// Truncate annotations to match
-	if len(moveAnnotations) > len(newMoves) {
-		moveAnnotations = moveAnnotations[:len(newMoves)]
-	}
-
-	// Reset game and re-apply moves
-	if initialFEN != "" {
-		f, _ := chess.FEN(initialFEN)
-		game = chess.NewGame(f)
-	} else {
-		game = chess.NewGame()
-	}
-
-	for _, m := range newMoves {
-		game.Move(m)
-	}
-
-	// Update UI state
-	lastMove = nil
-	if len(newMoves) > 0 {
-		lastMove = newMoves[len(newMoves)-1]
-	}
-
+	// Clear game-over state when navigating history
 	isGameOver = false
 	doc := js.Global().Get("document")
 	doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 	updateMoveList()
-	updateCapturedPieces()
-	handleBotTurn()
 }
 
 func applyStyleClass(style string) {

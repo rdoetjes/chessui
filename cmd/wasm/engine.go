@@ -190,6 +190,8 @@ func reconnectSession(roomID string, color string) {
 	game = chess.NewGame()
 	lastMove = nil
 	moveAnnotations = nil
+	currentViewIndex = -1
+	cachedViewIndex = -2
 	initialFEN = ""
 	updateMoveList()
 	updateCapturedPieces()

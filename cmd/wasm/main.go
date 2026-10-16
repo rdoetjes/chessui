@@ -44,6 +44,8 @@ var (
 	lastPositionEval    float64
 	lastMoveSide        chess.Color
 
+	currentViewIndex int = -1 // -1 means viewing the latest move
+
 	// Promotion State
 	isPromotionMode   bool
 	promoSourceSquare chess.Square
@@ -51,6 +53,9 @@ var (
 
 	moveAnnotations []string
 	initialFEN      string
+
+	cachedViewGame  *chess.Game
+	cachedViewIndex int = -2 // Use -2 to indicate cache is invalid
 )
 
 func fetchConfig(callback func()) {

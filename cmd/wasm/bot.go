@@ -59,15 +59,22 @@ func handleBotTurn() {
 		return
 	}
 
+	// If we are viewing history, the bot shouldn't move.
+	if currentViewIndex != -1 {
+		return
+	}
+
 	currentMoveIndex++
 	myMoveIndex := currentMoveIndex
 
 	// 1. Force the engine to stop any previous analysis
 	sendUCI("stop")
 
+	viewGame := getViewGame()
+
 	// 2. Command the engine to find a move/suggestion
-	turn := game.Position().Turn()
-	currentFen := game.Position().String()
+	turn := viewGame.Position().Turn()
+	currentFen := viewGame.Position().String()
 
 	// Set engine strength
 	eloStr := js.Global().Get("document").Call("getElementById", "elo-select").Get("value").String()
@@ -118,6 +125,12 @@ func processBotResponse(moveStr string) {
 	}
 
 	// SINGLE PLAYER:
+	// If we are viewing history, don't execute bot moves
+	if currentViewIndex != -1 {
+		lastHumanSuggestion = moveStr
+		return
+	}
+
 	// If it's currently the human's turn, this is a background suggestion.
 	if game.Position().Turn() == playerColor {
 		lastHumanSuggestion = moveStr

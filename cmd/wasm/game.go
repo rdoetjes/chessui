@@ -9,9 +9,52 @@ import (
 	"github.com/notnil/chess"
 )
 
+// getViewGame returns a game state representing the move currently being viewed.
+func getViewGame() *chess.Game {
+	if currentViewIndex == -1 {
+		return game
+	}
+	// Check cache
+	// Use -1 for "Initial Position" logic in cache
+	lookupIndex := currentViewIndex
+	if lookupIndex == -2 {
+		lookupIndex = -1
+	}
+
+	if cachedViewIndex == lookupIndex && cachedViewGame != nil {
+		return cachedViewGame
+	}
+
+	var tempGame *chess.Game
+	if initialFEN != "" {
+		f, _ := chess.FEN(initialFEN)
+		tempGame = chess.NewGame(f)
+	} else {
+		tempGame = chess.NewGame()
+	}
+	moves := game.Moves()
+	for i := 0; i <= lookupIndex && i < len(moves); i++ {
+		tempGame.Move(moves[i])
+	}
+
+	cachedViewGame = tempGame
+	cachedViewIndex = lookupIndex
+	return tempGame
+}
+
 // executeMove is the central point for ALL movements.
 func executeMove(moveStr string, relay bool) {
-	// 1. Find the move in the list of legal moves
+	// 1. Handle Branching from History
+	if currentViewIndex != -1 {
+		truncIdx := currentViewIndex
+		if truncIdx == -2 {
+			truncIdx = -1
+		}
+		truncateGameAt(truncIdx)
+		currentViewIndex = -1 // Back to live
+	}
+
+	// 2. Find the move in the list of legal moves for the CURRENT game
 	var target *chess.Move
 	for _, m := range game.ValidMoves() {
 		// Use coordinate comparison (UCI standard)
@@ -23,9 +66,11 @@ func executeMove(moveStr string, relay bool) {
 
 	// 2. If move is valid, apply it
 	if target != nil {
-		if isGameOver {
-			return
-		}
+		// If we are making a move, the game is no longer over (unless the new move results in mate)
+		isGameOver = false
+		doc := js.Global().Get("document")
+		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
+
 		// Record state BEFORE move
 		lastPositionEval = evalScore
 		lastMoveSide = game.Position().Turn()
@@ -86,19 +131,25 @@ func handleBoardClick(col, row int) {
 		return
 	}
 
-	turn := game.Position().Turn()
-	if turn != playerColor {
-		return
-	}
+	viewGame := getViewGame()
+	pos := viewGame.Position()
+	turn := pos.Turn()
 
 	if selectedPos == chess.NoSquare {
-		p := game.Position().Board().Piece(sq)
+		p := pos.Board().Piece(sq)
+		// Allow selecting pieces even if it's not the player's turn (for visualization)
 		if p != chess.NoPiece && p.Color() == turn {
 			selectedPos = sq
 		}
 	} else {
+		// Only allow executing moves if it's the player's turn
+		if turn != playerColor {
+			selectedPos = chess.NoSquare
+			return
+		}
+
 		var targetMoves []*chess.Move
-		for _, m := range game.ValidMoves() {
+		for _, m := range viewGame.ValidMoves() {
 			if m.S1() == selectedPos && m.S2() == sq {
 				targetMoves = append(targetMoves, m)
 			}
@@ -113,7 +164,7 @@ func handleBoardClick(col, row int) {
 			promoTargetSquare = sq
 			showPromotionPicker(turn)
 		} else {
-			p := game.Position().Board().Piece(sq)
+			p := pos.Board().Piece(sq)
 			if p != chess.NoPiece && p.Color() == turn {
 				selectedPos = sq
 			} else {
@@ -130,4 +181,36 @@ func checkGameState() {
 		alert.Call("querySelector", "#winner-text").Set("innerText", "Outcome: "+game.Outcome().String())
 		alert.Get("classList").Call("remove", "hidden")
 	}
+}
+
+func truncateGameAt(index int) {
+	allMoves := game.Moves()
+	if index < -1 || index >= len(allMoves) {
+		return
+	}
+
+	newMoves := allMoves[:index+1]
+
+	// Truncate annotations to match
+	if len(moveAnnotations) > len(newMoves) {
+		moveAnnotations = moveAnnotations[:len(newMoves)]
+	}
+
+	// Reset game and re-apply moves
+	var newGame *chess.Game
+	if initialFEN != "" {
+		f, _ := chess.FEN(initialFEN)
+		newGame = chess.NewGame(f)
+	} else {
+		newGame = chess.NewGame()
+	}
+
+	for _, m := range newMoves {
+		newGame.Move(m)
+	}
+	game = newGame
+
+	// Invalidate view cache
+	cachedViewIndex = -2
+	cachedViewGame = nil
 }
