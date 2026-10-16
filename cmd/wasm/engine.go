@@ -137,22 +137,20 @@ func processUCIResponse(msg string) {
 		evalScore = sVal
 		updateEvalBar()
 
-		// Check for blunder on the move just made
+		// Check for move quality on the move just made
 		if len(moveAnnotations) > 0 && lastMoveSide == playerColor {
 			lastIdx := len(moveAnnotations) - 1
-			// Only check if not already marked (e.g. as 🟢)
-			if moveAnnotations[lastIdx] == "" {
-				var diff float64
-				if lastMoveSide == chess.White {
-					diff = evalScore - lastPositionEval
-				} else {
-					diff = lastPositionEval - evalScore
-				}
+			var diff float64
+			if lastMoveSide == chess.White {
+				diff = evalScore - lastPositionEval
+			} else {
+				diff = lastPositionEval - evalScore
+			}
 
-				if diff < -2.0 {
-					moveAnnotations[lastIdx] = "🔴"
-					updateMoveList()
-				}
+			rating := colorMoveRating(diff)
+			if rating != "" {
+				moveAnnotations[lastIdx] = rating
+				updateMoveList()
 			}
 		}
 	}
@@ -204,4 +202,17 @@ func sendUCI(msg string) {
 	if ws.Get("readyState").Int() == 1 {
 		ws.Call("send", msg)
 	}
+}
+
+func colorMoveRating(diff float64) string {
+	if diff < -2.0 {
+		return "🔴"
+	}
+	if diff < -0.8 {
+		return "🟠"
+	}
+	if diff > 0.4 {
+		return "🟢"
+	}
+	return ""
 }

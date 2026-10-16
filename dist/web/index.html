@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Chess UI (v5.19)</title>
     <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="style.css?v=5.19">
-    <script src="wasm_exec.js?v=5.19"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="wasm_exec.js"></script>
 </head>
 <body>
     <div id="wasm-status">WASM v5.19: LOADING...</div>
@@ -151,6 +148,11 @@
 	        <div class="sidebar right-sidebar">
 	            <div class="panel">
 	                <h2>Moves</h2>
+                        <div class="move-legend" style="font-size: 0.7rem; margin-bottom: 10px; display: flex; justify-content: space-around; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; color: #888;">
+                            <span>🟢 Best</span>
+                            <span>🟠 Inaccuracy</span>
+                            <span>🔴 Blunder</span>
+                        </div>
 	                <div id="move-list"></div>
 	                <button id="copy-pgn">Copy PGN</button>
 	                <div id="engine-suggestion" class="suggestion-text"></div>
