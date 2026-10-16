@@ -1,5 +1,0 @@
-{
-    "stockfish_path": "stockfish",
-    "threads": 8,
-    "port": 8081
-}

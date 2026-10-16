@@ -46,7 +46,7 @@ cd chess-ui
 ```
 
 ### 2. Configure the Engine
-Edit `config.json` to match your environment:
+Edit `config.json` or create one at `/usr/local/etc/chess-server/config.json`. You can also specify a custom path using the `-config` flag.
 ```json
 {
     "stockfish_path": "stockfish",
@@ -62,8 +62,11 @@ You can use the provided `Makefile` for a streamlined setup:
 # Build both WASM logic and Server
 make all
 
-# Start the server
+# Start the server (using default config paths)
 ./chess-server
+
+# Start the server with a custom config
+./chess-server -config ./my-config.json -web ./web
 ```
 
 The application will be available at `http://localhost:8081`.

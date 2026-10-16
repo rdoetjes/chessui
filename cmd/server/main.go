@@ -42,12 +42,17 @@ var (
 	}
 )
 
-func loadConfig() {
-	// Default values
-	config = Config{StockfishPath: "stockfish", Threads: 4, Port: 8081}
+func loadConfig(explicitPath string) {
+	// Default hardcoded values
+	config = Config{StockfishPath: "stockfish", Threads: 8, Port: 8081}
 
-	// Try primary path
-	paths := []string{"/usr/local/etc/chess-server/config.json", "config.json"}
+	var paths []string
+	if explicitPath != "" {
+		paths = []string{explicitPath}
+	} else {
+		paths = []string{"/usr/local/etc/chess-server/config.json", "config.json"}
+	}
+
 	for _, path := range paths {
 		file, err := os.Open(path)
 		if err == nil {
@@ -58,6 +63,8 @@ func loadConfig() {
 				return
 			}
 			log.Printf("ERROR: Failed to decode config at %s: %v\n", path, err)
+		} else if explicitPath != "" {
+			log.Printf("ERROR: Could not open explicit config file %s: %v\n", path, err)
 		}
 	}
 	log.Printf("SERVER: Using default configuration (Port: %d)\n", config.Port)
@@ -188,9 +195,10 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	webDir := flag.String("web", "web", "Directory for web assets")
+	configPath := flag.String("config", "", "Path to config.json")
 	flag.Parse()
 
-	loadConfig()
+	loadConfig(*configPath)
 
 	absWebDir, _ := filepath.Abs(*webDir)
 	assetsDir := filepath.Join(filepath.Dir(absWebDir), "assets")
