@@ -29,7 +29,7 @@ case "$1" in
         rm -rf "${JAIL_WWW:?}"/*
         # Copy web CONTENTS directly to JAIL_WWW root
         cp -r web/* "${JAIL_WWW}/"
-        # Copy assets folder to JAIL_WWW/assets
+        # Copy assets folder to JAIL_WWW
         cp -r assets "${JAIL_WWW}/"
         
         # Ensure correct permissions
@@ -83,8 +83,9 @@ EOF
         make all
         cp chess-server "$INSTALL_DIR/"
         cp config.json "$INSTALL_DIR/"
-        cp -r web/* "$INSTALL_DIR/web/"
-        cp -r assets "$INSTALL_DIR/assets/"
+        # Ensure we don't nest folders if they already exist
+        cp -r web "$INSTALL_DIR/"
+        cp -r assets "$INSTALL_DIR/"
         echo "Installation complete in $INSTALL_DIR"
         ;;
 esac

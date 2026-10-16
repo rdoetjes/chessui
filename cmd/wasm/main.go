@@ -96,6 +96,7 @@ func main() {
 
 	setupWebSocket()
 	loadAssets()
+	applyStyleClass(currentStyle)
 	registerEvents()
 	updateCapturedPieces()
 

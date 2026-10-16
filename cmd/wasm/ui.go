@@ -99,6 +99,7 @@ func registerEvents() {
 
 	doc.Call("getElementById", "style-select").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
 		currentStyle = this.Get("value").String()
+		applyStyleClass(currentStyle)
 		loadAssets()
 		return nil
 	}))
@@ -231,13 +232,23 @@ func updateMoveList() {
 	list.Set("scrollTop", list.Get("scrollHeight"))
 }
 
+func applyStyleClass(style string) {
+	doc := js.Global().Get("document")
+	body := doc.Get("body")
+	body.Set("className", "theme-"+style)
+}
+
 func loadAssets() {
 	pieces := []string{"wp", "wn", "wb", "wr", "wq", "wk", "bp", "bn", "bb", "br", "bq", "bk", "board"}
 	fmt.Printf("WASM: Loading %d assets for style %s...\n", len(pieces), currentStyle)
+
+	// Use a timestamp for cache busting
+	ts := js.Global().Get("Date").New().Call("getTime").String()
+
 	for _, p := range pieces {
 		img := js.Global().Get("Image").New()
-		// Use relative path (no leading slash) so it works in subdirectories like /web/
-		src := fmt.Sprintf("assets/pieces/%s/%s.png", currentStyle, p)
+		// Use relative path with cache-busting timestamp
+		src := fmt.Sprintf("assets/pieces/%s/%s.png?v=%s", currentStyle, p, ts)
 		img.Set("src", src)
 		images[p] = img
 

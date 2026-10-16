@@ -186,6 +186,15 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	room.Mutex.Unlock()
 }
 
+func noCacheMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	webDir := flag.String("web", "web", "Directory for web assets")
 	flag.Parse()
@@ -213,5 +222,5 @@ func main() {
 
 	log.Printf("SERVER: Listening on http://localhost:%d\n", config.Port)
 	log.Printf("SERVER: Serving web assets from %s\n", absWebDir)
-	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), mux)
+	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), noCacheMiddleware(mux))
 }
