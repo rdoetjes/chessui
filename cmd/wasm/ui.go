@@ -105,12 +105,15 @@ func registerEvents() {
 
 	doc.Call("getElementById", "style-select").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
 		currentStyle = this.Get("value").String()
+		setCookie("chess-style", currentStyle, 365)
 		applyStyleClass(currentStyle)
 		loadAssets()
 		return nil
 	}))
 
 	doc.Call("getElementById", "elo-select").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
+		elo := this.Get("value").String()
+		setCookie("chess-elo", elo, 365)
 		handleBotTurn()
 		return nil
 	}))

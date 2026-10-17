@@ -100,8 +100,23 @@ func main() {
 	ctx = boardCanvas.Call("getContext", "2d")
 
 	setupWebSocket()
+
+	// Load style from cookie
+	savedStyle := getCookie("chess-style")
+	if savedStyle != "" {
+		// Update dropdown value
+		doc.Call("getElementById", "style-select").Set("value", savedStyle)
+	}
+
+	// Load ELO from cookie
+	savedElo := getCookie("chess-elo")
+	if savedElo != "" {
+		// Update dropdown value
+		doc.Call("getElementById", "elo-select").Set("value", savedElo)
+	}
+
 	loadAssets()
-	applyStyleClass(currentStyle)
+	applyStyleClass(savedStyle)
 	registerEvents()
 	updateCapturedPieces()
 

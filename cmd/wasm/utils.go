@@ -64,3 +64,28 @@ func generateFEN(m map[chess.Square]chess.Piece, turn string) string {
 	fen += fmt.Sprintf(" %s - - 0 1", turn)
 	return fen
 }
+
+func setCookie(name, value string, days int) {
+	doc := js.Global().Get("document")
+	expires := ""
+	if days > 0 {
+		date := js.Global().Get("Date").New()
+		time := date.Call("getTime").Float() + float64(days*24*60*60*1000)
+		date.Call("setTime", time)
+		expires = "; expires=" + date.Call("toUTCString").String()
+	}
+	doc.Set("cookie", name+"="+value+expires+"; path=/")
+}
+
+func getCookie(name string) string {
+	doc := js.Global().Get("document")
+	cookieStr := doc.Get("cookie").String()
+	cookies := strings.Split(cookieStr, "; ")
+	for _, cookie := range cookies {
+		parts := strings.Split(cookie, "=")
+		if len(parts) == 2 && parts[0] == name {
+			return parts[1]
+		}
+	}
+	return ""
+}
