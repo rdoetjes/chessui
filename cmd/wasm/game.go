@@ -10,6 +10,22 @@ import (
 )
 
 // getViewGame returns a game state representing the move currently being viewed.
+type GameState struct {
+	game             *chess.Game
+	selectedPos      chess.Square
+	lastMove         *chess.Move
+	isGameOver       bool
+	isSetupMode      bool
+	setupSquare      chess.Square
+	setupMap         map[chess.Square]chess.Piece
+	currentViewIndex int // -1 means viewing the latest move
+	moveAnnotations  []string
+	initialFEN       string
+	cachedViewGame   *chess.Game
+	cachedViewIndex  int  // -2 means invalid
+	isWhite          bool // Board orientation
+}
+
 func getViewGame() *chess.Game {
 	if app.game.currentViewIndex == -1 {
 		return app.game.game

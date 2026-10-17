@@ -9,55 +9,6 @@ import (
 	"github.com/notnil/chess"
 )
 
-type GameState struct {
-	game             *chess.Game
-	selectedPos      chess.Square
-	lastMove         *chess.Move
-	isGameOver       bool
-	isSetupMode      bool
-	setupSquare      chess.Square
-	setupMap         map[chess.Square]chess.Piece
-	currentViewIndex int // -1 means viewing the latest move
-	moveAnnotations  []string
-	initialFEN       string
-	cachedViewGame   *chess.Game
-	cachedViewIndex  int  // -2 means invalid
-	isWhite          bool // Board orientation
-}
-
-type UIState struct {
-	boardCanvas       js.Value
-	ctx               js.Value
-	images            map[string]js.Value
-	currentStyle      string
-	evalScore         float64
-	isPromotionMode   bool
-	promoSourceSquare chess.Square
-	promoTargetSquare chess.Square
-}
-
-type EngineState struct {
-	threads             int
-	lastHumanSuggestion string
-	lastPositionEval    float64
-	lastMoveSide        chess.Color
-}
-
-type AnimationState struct {
-	move      *chess.Move
-	piece     chess.Piece
-	progress  float64
-	startTime float64
-	duration  float64
-}
-
-type MultiplayerState struct {
-	ws               js.Value
-	isActive         bool
-	playerColor      chess.Color
-	multiplayerColor string
-}
-
 type App struct {
 	game   GameState
 	ui     UIState

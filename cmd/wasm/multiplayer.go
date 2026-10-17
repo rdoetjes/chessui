@@ -5,25 +5,35 @@ package main
 import (
 	"fmt"
 	"strings"
+	"syscall/js"
+
+	"github.com/notnil/chess"
 )
 
 // handleMultiplayerMessage processes relay commands from the remote player.
-func handleMultiplayerMessage(msg string) bool {
+type MultiplayerState struct {
+	ws               js.Value
+	isActive         bool
+	playerColor      chess.Color
+	multiplayerColor string
+}
+
+func handleMultiplayerMessage(data string) bool {
 	if !app.multi.isActive {
 		return false
 	}
 
 	// 1. Peer move relay
-	if strings.HasPrefix(msg, "opponent_move ") {
-		moveStr := strings.TrimPrefix(msg, "opponent_move ")
+	if strings.HasPrefix(data, "opponent_move ") {
+		moveStr := strings.TrimPrefix(data, "opponent_move ")
 		fmt.Printf("MULTIPLAYER: Opponent moved: %s\n", moveStr)
 		executeMove(moveStr, false) // false = don't relay back to the sender
 		return true
 	}
 
 	// 2. Color sync signals
-	if strings.HasPrefix(msg, "assign_color ") {
-		hostColor := strings.TrimPrefix(msg, "assign_color ")
+	if strings.HasPrefix(data, "assign_color ") {
+		hostColor := strings.TrimPrefix(data, "assign_color ")
 		if hostColor == "white" {
 			app.multi.playerColor = playerColorMap["black"]
 		} else {

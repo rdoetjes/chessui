@@ -12,6 +12,13 @@ import (
 	"github.com/rdoetjes/chess-ui/internal/uci"
 )
 
+type EngineState struct {
+	threads             int
+	lastHumanSuggestion string
+	lastPositionEval    float64
+	lastMoveSide        chess.Color
+}
+
 func setupWebSocket() {
 	loc := js.Global().Get("location")
 	host := loc.Get("host").String()

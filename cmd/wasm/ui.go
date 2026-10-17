@@ -11,6 +11,25 @@ import (
 	"github.com/notnil/chess"
 )
 
+type UIState struct {
+	boardCanvas       js.Value
+	ctx               js.Value
+	images            map[string]js.Value
+	currentStyle      string
+	evalScore         float64
+	isPromotionMode   bool
+	promoSourceSquare chess.Square
+	promoTargetSquare chess.Square
+}
+
+type AnimationState struct {
+	move      *chess.Move
+	piece     chess.Piece
+	progress  float64
+	startTime float64
+	duration  float64
+}
+
 func registerEvents() {
 	doc := js.Global().Get("document")
 
