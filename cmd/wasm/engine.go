@@ -43,6 +43,9 @@ func setupWebSocket() {
 
 	if !app.multi.isActive {
 		fmt.Println("WASM: Single Player Mode (vs BOT)")
+		app.game.isStarted = false
+	} else {
+		app.game.isStarted = true
 	}
 
 	connect(host, roomID, loc.Get("protocol").String() == "https:")
@@ -203,6 +206,7 @@ func reconnectSession(roomID string, color string) {
 	app.game.currentViewIndex = -1
 	app.game.cachedViewIndex = -2
 	app.game.initialFEN = ""
+	app.game.isStarted = true
 	updateMoveList()
 	updateCapturedPieces()
 

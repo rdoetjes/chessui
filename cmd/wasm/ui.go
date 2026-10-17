@@ -56,6 +56,17 @@ func registerEvents() {
 
 	// Controls
 	doc.Call("getElementById", "new-game").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		doc.Call("getElementById", "popup-new-game").Get("classList").Call("remove", "hidden")
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-new-game-start").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		colorStr := doc.Call("getElementById", "new-game-color").Get("value").String()
+		app.multi.playerColor = playerColorMap[colorStr]
+		app.game.isStarted = true
+
+		doc.Call("getElementById", "popup-new-game").Get("classList").Call("add", "hidden")
+
 		app.game.game = chess.NewGame()
 		app.game.lastMove = nil
 		app.game.isGameOver = false
@@ -70,6 +81,11 @@ func registerEvents() {
 		updateMoveList()
 		updateCapturedPieces()
 		handleBotTurn()
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-new-game-cancel").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		doc.Call("getElementById", "popup-new-game").Get("classList").Call("add", "hidden")
 		return nil
 	}))
 

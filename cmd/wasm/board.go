@@ -139,7 +139,7 @@ func drawBoard() {
 		for sq, p := range app.game.setupMap {
 			drawPieceAt(sq, p, tileSize)
 		}
-	} else {
+	} else if app.game.isStarted {
 		board := viewPos.Board()
 		for i := 0; i < 64; i++ {
 			sq := chess.Square(i)

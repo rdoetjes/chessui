@@ -23,7 +23,7 @@ type GameState struct {
 	initialFEN       string
 	cachedViewGame   *chess.Game
 	cachedViewIndex  int  // -2 means invalid
-	isWhite          bool // Board orientation
+	isStarted        bool // Whether the game has actually started
 }
 
 func getViewGame() *chess.Game {

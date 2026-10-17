@@ -46,6 +46,11 @@
 	                    </select>
                 </div>
                 <div id="setup-controls" class="control-group hidden">
+                    <label>Your Color</label>
+                    <select id="setup-player-color">
+                        <option value="white">White</option>
+                        <option value="black">Black</option>
+                    </select>
                     <label>Whose Turn?</label>
                     <select id="turn-select">
                         <option value="w">White</option>
@@ -77,6 +82,20 @@
                         <button id="btn-host-open">Host Game</button>
                         <button id="btn-join-open">Join Game</button>
                     </div>
+                </div>
+
+                <!-- New Game Popup -->
+                <div id="popup-new-game" class="popup hidden">
+                    <h3>Start New Game</h3>
+                    <div class="control-group">
+                        <label>Your Color</label>
+                        <select id="new-game-color">
+                            <option value="white">White</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
+                    <button id="btn-new-game-start">Start Game</button>
+                    <button id="btn-new-game-cancel" class="cancel-btn">Cancel</button>
                 </div>
 
                 <!-- Host Popup -->

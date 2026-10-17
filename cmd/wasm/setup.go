@@ -20,6 +20,13 @@ func handleSetupToggle() {
 		btn.Get("style").Set("backgroundColor", "#f44336")
 		doc.Call("getElementById", "setup-controls").Get("classList").Call("remove", "hidden")
 
+		// Pre-select current player color in setup dropdown
+		currColor := "white"
+		if app.multi.playerColor == chess.Black {
+			currColor = "black"
+		}
+		doc.Call("getElementById", "setup-player-color").Set("value", currColor)
+
 		app.game.setupMap = make(map[chess.Square]chess.Piece)
 		f, _ := chess.FEN("8/8/8/8/8/8/8/8 w - - 0 1")
 		app.game.game = chess.NewGame(f)
@@ -42,17 +49,36 @@ func handleSetupToggle() {
 		}
 
 		app.game.isSetupMode = false
+		app.game.isStarted = true
 		btn.Set("innerText", "Setup Board")
 		btn.Get("style").Set("backgroundColor", "")
 		doc.Call("getElementById", "setup-controls").Get("classList").Call("add", "hidden")
+
+		// Sync player color from setup panel
+		colorStr := doc.Call("getElementById", "setup-player-color").Get("value").String()
+		app.multi.playerColor = playerColorMap[colorStr]
 
 		turn := doc.Call("getElementById", "turn-select").Get("value").String()
 		app.game.initialFEN = generateFEN(app.game.setupMap, turn)
 		f, _ := chess.FEN(app.game.initialFEN)
 		app.game.game = chess.NewGame(f)
 		app.game.moveAnnotations = nil
+		sendUCI("ucinewgame")
+		sendUCI("isready")
+
+		// Check if the engine needs to move immediately
+		turnColor := chess.White
+		if turn == "b" {
+			turnColor = chess.Black
+		}
+
+		if turnColor != app.multi.playerColor {
+			fmt.Printf("WASM: Setup complete. Bot turn detected (%v)\n", turnColor)
+		}
+
 		handleBotTurn()
 		updateMoveList()
+		updateCapturedPieces()
 	}
 }
 

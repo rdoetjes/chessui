@@ -55,7 +55,7 @@ var currentMoveIndex int = 0
 
 // handleBotTurn is the ONLY place that tells the engine to start thinking.
 func handleBotTurn() {
-	if app.game.isSetupMode || app.game.isGameOver {
+	if app.game.isSetupMode || app.game.isGameOver || !app.game.isStarted {
 		return
 	}
 

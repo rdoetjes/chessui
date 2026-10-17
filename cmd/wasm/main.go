@@ -23,7 +23,6 @@ var app = App{
 		currentViewIndex: -1,
 		cachedViewIndex:  -2,
 		setupMap:         make(map[chess.Square]chess.Piece),
-		isWhite:          true,
 	},
 	ui: UIState{
 		images:       make(map[string]js.Value),
