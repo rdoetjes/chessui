@@ -84,8 +84,6 @@ func executeMove(moveStr string, relay bool) {
 	if target != nil {
 		// If we are making a move, the game is no longer over (unless the new move results in mate)
 		app.game.isGameOver = false
-		doc := js.Global().Get("document")
-		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 		// Record state BEFORE move
 		app.engine.lastPositionEval = app.ui.evalScore
@@ -194,9 +192,6 @@ func handleBoardClick(col, row int) {
 func checkGameState() {
 	if app.game.game.Outcome() != chess.NoOutcome {
 		app.game.isGameOver = true
-		alert := js.Global().Get("document").Call("getElementById", "checkmate-alert")
-		alert.Call("querySelector", "#winner-text").Set("innerText", "Outcome: "+app.game.game.Outcome().String())
-		alert.Get("classList").Call("remove", "hidden")
 	}
 }
 

@@ -64,7 +64,6 @@ func registerEvents() {
 		app.engine.lastHumanSuggestion = ""                            // Reset suggestion data
 		showSuggestion("")                                             // Clear suggestion UI
 		doc.Call("getElementById", "engine-info").Set("innerText", "") // Clear engine info
-		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 		app.game.moveAnnotations = nil
 		app.game.initialFEN = ""
 		sendUCI("ucinewgame")
@@ -115,7 +114,6 @@ func registerEvents() {
 		app.game.isGameOver = false
 		app.game.currentViewIndex = -1
 		app.game.cachedViewIndex = -2
-		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 		updateMoveList()
 		handleBotTurn() // Update engine with new position
@@ -384,8 +382,6 @@ func jumpToMove(index int) {
 
 	// Clear game-over state when navigating history
 	app.game.isGameOver = false
-	doc := js.Global().Get("document")
-	doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 	updateMoveList()
 
