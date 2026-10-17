@@ -14,21 +14,21 @@ func handleSetupToggle() {
 	doc := js.Global().Get("document")
 	btn := doc.Call("getElementById", "setup-board")
 
-	if !isSetupMode {
-		isSetupMode = true
+	if !app.game.isSetupMode {
+		app.game.isSetupMode = true
 		btn.Set("innerText", "Play from Position")
 		btn.Get("style").Set("backgroundColor", "#f44336")
 		doc.Call("getElementById", "setup-controls").Get("classList").Call("remove", "hidden")
 
-		setupMap = make(map[chess.Square]chess.Piece)
+		app.game.setupMap = make(map[chess.Square]chess.Piece)
 		f, _ := chess.FEN("8/8/8/8/8/8/8/8 w - - 0 1")
-		game = chess.NewGame(f)
-		lastMove = nil
-		moveAnnotations = nil
+		app.game.game = chess.NewGame(f)
+		app.game.lastMove = nil
+		app.game.moveAnnotations = nil
 		updateMoveList()
 	} else {
 		wKing, bKing := false, false
-		for _, p := range setupMap {
+		for _, p := range app.game.setupMap {
 			if p == chess.WhiteKing {
 				wKing = true
 			}
@@ -41,16 +41,16 @@ func handleSetupToggle() {
 			return
 		}
 
-		isSetupMode = false
+		app.game.isSetupMode = false
 		btn.Set("innerText", "Setup Board")
 		btn.Get("style").Set("backgroundColor", "")
 		doc.Call("getElementById", "setup-controls").Get("classList").Call("add", "hidden")
 
 		turn := doc.Call("getElementById", "turn-select").Get("value").String()
-		initialFEN = generateFEN(setupMap, turn)
-		f, _ := chess.FEN(initialFEN)
-		game = chess.NewGame(f)
-		moveAnnotations = nil
+		app.game.initialFEN = generateFEN(app.game.setupMap, turn)
+		f, _ := chess.FEN(app.game.initialFEN)
+		app.game.game = chess.NewGame(f)
+		app.game.moveAnnotations = nil
 		handleBotTurn()
 		updateMoveList()
 	}
@@ -73,7 +73,7 @@ func initPiecePicker() {
 
 		if p != "none" {
 			img := doc.Call("createElement", "img")
-			img.Set("src", fmt.Sprintf("/assets/pieces/%s/%s.png", currentStyle, p))
+			img.Set("src", fmt.Sprintf("/assets/pieces/%s/%s.png", app.ui.currentStyle, p))
 			div.Call("appendChild", img)
 		} else {
 			div.Set("innerText", "X")
@@ -89,7 +89,7 @@ func initPiecePicker() {
 }
 
 func handlePickerSelect(pStr string) {
-	if isPromotionMode {
+	if app.ui.isPromotionMode {
 		completePromotion(pStr)
 		return
 	}
@@ -123,8 +123,8 @@ func handlePickerSelect(pStr string) {
 	}
 
 	if piece != chess.NoPiece && piece.Type() == chess.King {
-		for sq, p := range setupMap {
-			if p.Type() == chess.King && p.Color() == piece.Color() && sq != setupSquare {
+		for sq, p := range app.game.setupMap {
+			if p.Type() == chess.King && p.Color() == piece.Color() && sq != app.game.setupSquare {
 				js.Global().Call("alert", "Only one king allowed!")
 				return
 			}
@@ -132,14 +132,14 @@ func handlePickerSelect(pStr string) {
 	}
 
 	if piece == chess.NoPiece {
-		delete(setupMap, setupSquare)
+		delete(app.game.setupMap, app.game.setupSquare)
 	} else {
-		setupMap[setupSquare] = piece
+		app.game.setupMap[app.game.setupSquare] = piece
 	}
 
 	// Fast board update during setup
-	f, _ := chess.FEN(generateFEN(setupMap, "w"))
-	game = chess.NewGame(f)
+	f, _ := chess.FEN(generateFEN(app.game.setupMap, "w"))
+	app.game.game = chess.NewGame(f)
 
 	js.Global().Get("document").Call("getElementById", "piece-picker").Get("classList").Call("add", "hidden")
 }
@@ -165,7 +165,7 @@ func showPromotionPicker(color chess.Color) {
 		}
 
 		img := doc.Call("createElement", "img")
-		img.Set("src", fmt.Sprintf("/assets/pieces/%s/%s.png", currentStyle, p))
+		img.Set("src", fmt.Sprintf("/assets/pieces/%s/%s.png", app.ui.currentStyle, p))
 		div.Call("appendChild", img)
 
 		pt := p
@@ -181,9 +181,9 @@ func showPromotionPicker(color chess.Color) {
 
 func completePromotion(pStr string) {
 	promoChar := string(pStr[1]) // q, r, b, n
-	moveStr := fmt.Sprintf("%s%s%s", promoSourceSquare.String(), promoTargetSquare.String(), promoChar)
+	moveStr := fmt.Sprintf("%s%s%s", app.ui.promoSourceSquare.String(), app.ui.promoTargetSquare.String(), promoChar)
 
-	isPromotionMode = false
+	app.ui.isPromotionMode = false
 	js.Global().Get("document").Call("getElementById", "piece-picker").Get("classList").Call("add", "hidden")
 
 	executeMove(moveStr, true)

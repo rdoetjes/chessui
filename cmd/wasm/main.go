@@ -9,54 +9,92 @@ import (
 	"github.com/notnil/chess"
 )
 
-var (
-	game           *chess.Game
-	boardCanvas    js.Value
-	ctx            js.Value
-	images         map[string]js.Value
-	selectedPos    chess.Square = chess.NoSquare
-	ws             js.Value
-	currentStyle   = "standard"
-	isWhite        = true
-	lastMove       *chess.Move
-	evalScore      float64      = 0.0
-	isGameOver                  = false
-	engineThreads               = 4
-	isSetupMode                 = false
-	setupSquare    chess.Square = chess.NoSquare
-	setupMap       map[chess.Square]chess.Piece
-	isMultiplayer  = false
-	playerColor    = chess.White
-	playerColorMap = map[string]chess.Color{
-		"white": chess.White,
-		"black": chess.Black,
-	}
-	multiplayerColor = "white"
+type GameState struct {
+	game             *chess.Game
+	selectedPos      chess.Square
+	lastMove         *chess.Move
+	isGameOver       bool
+	isSetupMode      bool
+	setupSquare      chess.Square
+	setupMap         map[chess.Square]chess.Piece
+	currentViewIndex int // -1 means viewing the latest move
+	moveAnnotations  []string
+	initialFEN       string
+	cachedViewGame   *chess.Game
+	cachedViewIndex  int  // -2 means invalid
+	isWhite          bool // Board orientation
+}
 
-	// Animation State
-	animMove      *chess.Move
-	animPiece     chess.Piece
-	animProgress  float64 = 1.0 // 0.0 to 1.0
-	animStartTime float64
-	animDuration  = 200.0 // milliseconds
-
-	lastHumanSuggestion string
-	lastPositionEval    float64
-	lastMoveSide        chess.Color
-
-	currentViewIndex int = -1 // -1 means viewing the latest move
-
-	// Promotion State
+type UIState struct {
+	boardCanvas       js.Value
+	ctx               js.Value
+	images            map[string]js.Value
+	currentStyle      string
+	evalScore         float64
 	isPromotionMode   bool
 	promoSourceSquare chess.Square
 	promoTargetSquare chess.Square
+}
 
-	moveAnnotations []string
-	initialFEN      string
+type EngineState struct {
+	threads             int
+	lastHumanSuggestion string
+	lastPositionEval    float64
+	lastMoveSide        chess.Color
+}
 
-	cachedViewGame  *chess.Game
-	cachedViewIndex int = -2 // Use -2 to indicate cache is invalid
-)
+type AnimationState struct {
+	move      *chess.Move
+	piece     chess.Piece
+	progress  float64
+	startTime float64
+	duration  float64
+}
+
+type MultiplayerState struct {
+	ws               js.Value
+	isActive         bool
+	playerColor      chess.Color
+	multiplayerColor string
+}
+
+type App struct {
+	game   GameState
+	ui     UIState
+	engine EngineState
+	anim   AnimationState
+	multi  MultiplayerState
+}
+
+var app = App{
+	game: GameState{
+		selectedPos:      chess.NoSquare,
+		currentViewIndex: -1,
+		cachedViewIndex:  -2,
+		setupMap:         make(map[chess.Square]chess.Piece),
+		isWhite:          true,
+	},
+	ui: UIState{
+		images:       make(map[string]js.Value),
+		currentStyle: "standard",
+	},
+	engine: EngineState{
+		threads: 4,
+	},
+	anim: AnimationState{
+		progress: 1.0,
+		duration: 200.0,
+	},
+	multi: MultiplayerState{
+		playerColor:      chess.White,
+		multiplayerColor: "white",
+	},
+}
+
+var playerColorMap = map[string]chess.Color{
+	"white": chess.White,
+	"black": chess.Black,
+}
 
 func fetchConfig(callback func()) {
 	js.Global().Call("fetch", "/config").
@@ -66,8 +104,8 @@ func fetchConfig(callback func()) {
 		Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
 			config := args[0]
 			if !config.Get("threads").IsUndefined() {
-				engineThreads = config.Get("threads").Int()
-				fmt.Printf("WASM: Updated engineThreads to %d from server\n", engineThreads)
+				app.engine.threads = config.Get("threads").Int()
+				fmt.Printf("WASM: Updated engineThreads to %d from server\n", app.engine.threads)
 			}
 			if callback != nil {
 				callback()
@@ -84,9 +122,7 @@ func fetchConfig(callback func()) {
 }
 
 func main() {
-	game = chess.NewGame()
-	images = make(map[string]js.Value)
-	setupMap = make(map[chess.Square]chess.Piece)
+	app.game.game = chess.NewGame()
 
 	fmt.Println("Stockfish Chess UI Light - v1.0.2")
 
@@ -96,16 +132,17 @@ func main() {
 		statusLine.Set("innerText", " READY")
 	}
 
-	boardCanvas = doc.Call("getElementById", "chess-board")
-	ctx = boardCanvas.Call("getContext", "2d")
+	app.ui.boardCanvas = doc.Call("getElementById", "chess-board")
+	app.ui.ctx = app.ui.boardCanvas.Call("getContext", "2d")
 
 	setupWebSocket()
 
 	// Load style from cookie
 	savedStyle := getCookie("chess-style")
 	if savedStyle != "" {
+		app.ui.currentStyle = savedStyle
 		// Update dropdown value
-		doc.Call("getElementById", "style-select").Set("value", savedStyle)
+		doc.Call("getElementById", "style-select").Set("value", app.ui.currentStyle)
 	}
 
 	// Load ELO from cookie
@@ -116,7 +153,7 @@ func main() {
 	}
 
 	loadAssets()
-	applyStyleClass(savedStyle)
+	applyStyleClass(app.ui.currentStyle)
 	registerEvents()
 	updateCapturedPieces()
 

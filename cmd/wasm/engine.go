@@ -16,25 +16,25 @@ func setupWebSocket() {
 	loc := js.Global().Get("location")
 	host := loc.Get("host").String()
 	roomID := "bot-" + generateUUID()
-	isMultiplayer = false
+	app.multi.isActive = false
 
 	params := js.Global().Get("URLSearchParams").New(loc.Get("search"))
 	roomParam := params.Call("get", "room")
 
 	// FIX: Robust check for null/undefined/empty room parameter
-	isMultiplayer = false
-	multiplayerColor = "white"
+	app.multi.isActive = false
+	app.multi.multiplayerColor = "white"
 	if !roomParam.IsNull() && !roomParam.IsUndefined() {
 		val := roomParam.String()
 		if val != "" && val != "null" && val != "<null>" {
 			roomID = val
-			isMultiplayer = true
-			multiplayerColor = "auto"
+			app.multi.isActive = true
+			app.multi.multiplayerColor = "auto"
 			fmt.Printf("WASM: Multiplayer Mode Active (Room: %s)\n", roomID)
 		}
 	}
 
-	if !isMultiplayer {
+	if !app.multi.isActive {
 		fmt.Println("WASM: Single Player Mode (vs BOT)")
 	}
 
@@ -46,14 +46,14 @@ func connect(host, roomID string, isSecure bool) {
 	if isSecure {
 		wsURL = "wss://" + host + "/ws?room=" + roomID
 	}
-	ws = js.Global().Get("WebSocket").New(wsURL)
+	app.multi.ws = js.Global().Get("WebSocket").New(wsURL)
 
-	ws.Set("onopen", js.FuncOf(func(this js.Value, args []js.Value) any {
+	app.multi.ws.Set("onopen", js.FuncOf(func(this js.Value, args []js.Value) any {
 		fmt.Println("WASM: WebSocket connected")
 		doc := js.Global().Get("document")
 		statusLine := doc.Call("getElementById", "wasm-status")
 		if !statusLine.IsNull() {
-			if isMultiplayer {
+			if app.multi.isActive {
 				statusLine.Set("innerText", "CHESS UI - MULTIPLAYER")
 			} else {
 				statusLine.Set("innerText", "CHESS UI - BOT ACTIVE")
@@ -62,34 +62,34 @@ func connect(host, roomID string, isSecure bool) {
 		}
 
 		sendUCI("uci")
-		sendUCI(fmt.Sprintf("setoption name Threads value %d", engineThreads))
+		sendUCI(fmt.Sprintf("setoption name Threads value %d", app.engine.threads))
 		sendUCI("isready")
 		sendUCI("ucinewgame")
 		sendUCI("isready")
-		if isMultiplayer {
-			if multiplayerColor == "auto" {
+		if app.multi.isActive {
+			if app.multi.multiplayerColor == "auto" {
 				sendUCI("request_color")
 			} else {
-				sendUCI("player_color " + multiplayerColor)
+				sendUCI("player_color " + app.multi.multiplayerColor)
 			}
 		} else {
-			playerColor = chess.White
+			app.multi.playerColor = chess.White
 		}
 		handleBotTurn()
 		return nil
 	}))
 
-	ws.Set("onerror", js.FuncOf(func(this js.Value, args []js.Value) any {
+	app.multi.ws.Set("onerror", js.FuncOf(func(this js.Value, args []js.Value) any {
 		fmt.Println("WASM: WebSocket Error")
 		return nil
 	}))
 
-	ws.Set("onclose", js.FuncOf(func(this js.Value, args []js.Value) any {
+	app.multi.ws.Set("onclose", js.FuncOf(func(this js.Value, args []js.Value) any {
 		fmt.Println("WASM: WebSocket Closed")
 		return nil
 	}))
 
-	ws.Set("onmessage", js.FuncOf(func(this js.Value, args []js.Value) any {
+	app.multi.ws.Set("onmessage", js.FuncOf(func(this js.Value, args []js.Value) any {
 		msg := args[0].Get("data").String()
 
 		// Handle JSON config messages (more robust check)
@@ -99,9 +99,9 @@ func connect(host, roomID string, isSecure bool) {
 				Threads int    `json:"threads"`
 			}
 			if err := json.Unmarshal([]byte(msg), &cfg); err == nil && cfg.Type == "config" {
-				engineThreads = cfg.Threads
-				fmt.Printf("WASM: Config received - Threads: %d\n", engineThreads)
-				sendUCI(fmt.Sprintf("setoption name Threads value %d", engineThreads))
+				app.engine.threads = cfg.Threads
+				fmt.Printf("WASM: Config received - Threads: %d\n", app.engine.threads)
+				sendUCI(fmt.Sprintf("setoption name Threads value %d", app.engine.threads))
 			}
 			return nil
 		}
@@ -131,52 +131,52 @@ func processUCIResponse(msg string) {
 				sVal = -10.0
 			}
 		}
-		if game.Position().Turn() == chess.Black {
+		if app.game.game.Position().Turn() == chess.Black {
 			sVal = -sVal
 		}
-		evalScore = sVal
+		app.ui.evalScore = sVal
 		updateEvalBar()
 
 		// Check for move quality on the move just made
 		// Only rate if we have reached a reasonable depth to avoid noise
-		if info.Depth >= 8 && len(moveAnnotations) > 0 && lastMoveSide == playerColor {
-			lastIdx := len(moveAnnotations) - 1
+		if info.Depth >= 8 && len(app.game.moveAnnotations) > 0 && app.engine.lastMoveSide == app.multi.playerColor {
+			lastIdx := len(app.game.moveAnnotations) - 1
 			var diff float64
-			if lastMoveSide == chess.White {
-				diff = evalScore - lastPositionEval
+			if app.engine.lastMoveSide == chess.White {
+				diff = app.ui.evalScore - app.engine.lastPositionEval
 			} else {
-				diff = lastPositionEval - evalScore
+				diff = app.engine.lastPositionEval - app.ui.evalScore
 			}
 
 			rating := colorMoveRating(diff)
 			// Never downgrade an 'Excellent' (Best) move
 			// Only apply rating if it's "worse" than what's already there (or if nothing is there)
-			if rating != "" && moveAnnotations[lastIdx] != "🟢" {
-				moveAnnotations[lastIdx] = rating
+			if rating != "" && app.game.moveAnnotations[lastIdx] != "🟢" {
+				app.game.moveAnnotations[lastIdx] = rating
 				updateMoveList()
 			}
 		}
 	}
 	if info.BestMove != "" {
 		fmt.Printf("WASM: BestMove received: %s\n", info.BestMove)
-		if !isGameOver {
+		if !app.game.isGameOver {
 			processBotResponse(info.BestMove)
 		}
 	}
 }
 
 func reconnectSession(roomID string, color string) {
-	if ws.Get("readyState").Int() == 1 {
-		ws.Call("close")
+	if app.multi.ws.Get("readyState").Int() == 1 {
+		app.multi.ws.Call("close")
 	}
 	if roomID == "bot-play" {
 		roomID = "bot-" + generateUUID()
-		isMultiplayer = false
+		app.multi.isActive = false
 	} else {
-		isMultiplayer = true
+		app.multi.isActive = true
 	}
 	doc := js.Global().Get("document")
-	if isMultiplayer {
+	if app.multi.isActive {
 		doc.Call("getElementById", "multiplayer-buttons").Get("classList").Call("add", "hidden")
 		doc.Call("getElementById", "take-back").Get("classList").Call("add", "hidden")
 	} else {
@@ -184,18 +184,18 @@ func reconnectSession(roomID string, color string) {
 		doc.Call("getElementById", "multiplayer-buttons").Get("classList").Call("remove", "hidden")
 	}
 	if color != "auto" {
-		playerColor = playerColorMap[color]
-		multiplayerColor = color
+		app.multi.playerColor = playerColorMap[color]
+		app.multi.multiplayerColor = color
 	} else {
-		multiplayerColor = "auto"
+		app.multi.multiplayerColor = "auto"
 	}
 
-	game = chess.NewGame()
-	lastMove = nil
-	moveAnnotations = nil
-	currentViewIndex = -1
-	cachedViewIndex = -2
-	initialFEN = ""
+	app.game.game = chess.NewGame()
+	app.game.lastMove = nil
+	app.game.moveAnnotations = nil
+	app.game.currentViewIndex = -1
+	app.game.cachedViewIndex = -2
+	app.game.initialFEN = ""
 	updateMoveList()
 	updateCapturedPieces()
 
@@ -204,8 +204,8 @@ func reconnectSession(roomID string, color string) {
 }
 
 func sendUCI(msg string) {
-	if ws.Get("readyState").Int() == 1 {
-		ws.Call("send", msg)
+	if app.multi.ws.Get("readyState").Int() == 1 {
+		app.multi.ws.Call("send", msg)
 	}
 }
 

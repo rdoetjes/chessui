@@ -55,12 +55,12 @@ var currentMoveIndex int = 0
 
 // handleBotTurn is the ONLY place that tells the engine to start thinking.
 func handleBotTurn() {
-	if isSetupMode || isGameOver {
+	if app.game.isSetupMode || app.game.isGameOver {
 		return
 	}
 
 	// If we are viewing history, the bot shouldn't move.
-	if currentViewIndex != -1 {
+	if app.game.currentViewIndex != -1 {
 		return
 	}
 
@@ -101,10 +101,10 @@ func handleBotTurn() {
 
 	// In multiplayer, we always just analyze (no matter whose turn)
 	// In single player, we analyze on our turn and think on bot's turn
-	if isMultiplayer {
+	if app.multi.isActive {
 		fmt.Printf("WASM: [ID:%d] Multiplayer Analysis. FEN: %s\n", myMoveIndex, currentFen)
 		sendUCI(goCommand)
-	} else if turn != playerColor {
+	} else if turn != app.multi.playerColor {
 		fmt.Printf("WASM: [ID:%d] BOT Turn. Thinking...\n", myMoveIndex)
 		sendUCI(goCommand)
 	} else {
@@ -114,26 +114,26 @@ func handleBotTurn() {
 
 // processBotResponse handles the 'bestmove' string from Stockfish.
 func processBotResponse(moveStr string) {
-	if isGameOver || moveStr == "(none)" {
+	if app.game.isGameOver || moveStr == "(none)" {
 		return
 	}
 
 	// MULTIPLAYER: Only use bestmove for suggestions, NEVER execute
-	if isMultiplayer {
-		lastHumanSuggestion = moveStr
+	if app.multi.isActive {
+		app.engine.lastHumanSuggestion = moveStr
 		return
 	}
 
 	// SINGLE PLAYER:
 	// If we are viewing history, don't execute bot moves
-	if currentViewIndex != -1 {
-		lastHumanSuggestion = moveStr
+	if app.game.currentViewIndex != -1 {
+		app.engine.lastHumanSuggestion = moveStr
 		return
 	}
 
 	// If it's currently the human's turn, this is a background suggestion.
-	if game.Position().Turn() == playerColor {
-		lastHumanSuggestion = moveStr
+	if app.game.game.Position().Turn() == app.multi.playerColor {
+		app.engine.lastHumanSuggestion = moveStr
 		return
 	}
 

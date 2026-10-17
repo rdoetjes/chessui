@@ -38,7 +38,7 @@ func updateCapturedPieces() {
 
 	// Count pieces currently on board
 	currentPieces := make(map[chess.Piece]int)
-	board := game.Position().Board()
+	board := app.game.game.Position().Board()
 	for i := 0; i < 64; i++ {
 		p := board.Piece(chess.Square(i))
 		if p != chess.NoPiece {
@@ -84,7 +84,7 @@ func updateCapturedPieces() {
 
 	// Who is at the bottom? playerColor.
 	// Who is at the top? Opponent.
-	if playerColor == chess.White {
+	if app.multi.playerColor == chess.White {
 		// Bottom is White. Show pieces White has taken (Black pieces) and White's advantage.
 		renderCaptured(bottomPiecesDiv, bottomScoreDiv, blackPiecesTakenByWhite, whiteAdv)
 		// Top is Black. Show pieces Black has taken (White pieces) and Black's advantage.
@@ -127,7 +127,7 @@ func renderCaptured(piecesDiv, scoreDiv js.Value, pieces []chess.Piece, relative
 
 		img := doc.Call("createElement", "img")
 		// Use relative path (no leading slash)
-		img.Set("src", fmt.Sprintf("assets/pieces/%s/%s.png", currentStyle, pStr))
+		img.Set("src", fmt.Sprintf("assets/pieces/%s/%s.png", app.ui.currentStyle, pStr))
 		img.Get("style").Set("width", "24px")
 		img.Get("style").Set("height", "24px")
 		piecesDiv.Call("appendChild", img)

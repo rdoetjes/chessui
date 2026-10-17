@@ -9,7 +9,7 @@ import (
 
 // handleMultiplayerMessage processes relay commands from the remote player.
 func handleMultiplayerMessage(msg string) bool {
-	if !isMultiplayer {
+	if !app.multi.isActive {
 		return false
 	}
 
@@ -25,11 +25,11 @@ func handleMultiplayerMessage(msg string) bool {
 	if strings.HasPrefix(msg, "assign_color ") {
 		hostColor := strings.TrimPrefix(msg, "assign_color ")
 		if hostColor == "white" {
-			playerColor = playerColorMap["black"]
+			app.multi.playerColor = playerColorMap["black"]
 		} else {
-			playerColor = playerColorMap["white"]
+			app.multi.playerColor = playerColorMap["white"]
 		}
-		fmt.Printf("MULTIPLAYER: Auto-assigned color: %v\n", playerColor)
+		fmt.Printf("MULTIPLAYER: Auto-assigned color: %v\n", app.multi.playerColor)
 		return true
 	}
 
@@ -38,7 +38,7 @@ func handleMultiplayerMessage(msg string) bool {
 
 // relayMoveToOpponent sends your move to the server to be seen by the other player.
 func relayMoveToOpponent(moveStr string) {
-	if isMultiplayer {
+	if app.multi.isActive {
 		sendUCI("move " + moveStr)
 	}
 }

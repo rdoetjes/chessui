@@ -20,7 +20,7 @@ func updateEvalBar() {
 
 	// Chess.com style mapping: use a sigmoid-like curve for better visualization
 	// instead of just score * 10
-	score := evalScore
+	score := app.ui.evalScore
 
 	// Convert score to percentage (0 to 100)
 	// At 0.0, percent is 50

@@ -15,18 +15,18 @@ func registerEvents() {
 	doc := js.Global().Get("document")
 
 	// Canvas Click
-	boardCanvas.Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+	app.ui.boardCanvas.Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		event := args[0]
-		rect := boardCanvas.Call("getBoundingClientRect")
+		rect := app.ui.boardCanvas.Call("getBoundingClientRect")
 		x := event.Get("clientX").Float() - rect.Get("left").Float()
 		y := event.Get("clientY").Float() - rect.Get("top").Float()
-		size := boardCanvas.Get("width").Float()
+		size := app.ui.boardCanvas.Get("width").Float()
 		tileSize := size / 8
 
 		col := int(x / tileSize)
 		row := 7 - int(y/tileSize)
 
-		if playerColor == chess.Black {
+		if app.multi.playerColor == chess.Black {
 			col = 7 - col
 			row = 7 - row
 		}
@@ -37,17 +37,17 @@ func registerEvents() {
 
 	// Controls
 	doc.Call("getElementById", "new-game").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
-		game = chess.NewGame()
-		lastMove = nil
-		isGameOver = false
-		currentViewIndex = -1
-		cachedViewIndex = -2
-		lastHumanSuggestion = ""                                       // Reset suggestion data
+		app.game.game = chess.NewGame()
+		app.game.lastMove = nil
+		app.game.isGameOver = false
+		app.game.currentViewIndex = -1
+		app.game.cachedViewIndex = -2
+		app.engine.lastHumanSuggestion = ""                            // Reset suggestion data
 		showSuggestion("")                                             // Clear suggestion UI
 		doc.Call("getElementById", "engine-info").Set("innerText", "") // Clear engine info
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
-		moveAnnotations = nil
-		initialFEN = ""
+		app.game.moveAnnotations = nil
+		app.game.initialFEN = ""
 		sendUCI("ucinewgame")
 		updateMoveList()
 		updateCapturedPieces()
@@ -56,7 +56,7 @@ func registerEvents() {
 	}))
 
 	doc.Call("getElementById", "take-back").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
-		moves := game.Moves()
+		moves := app.game.game.Moves()
 		if len(moves) == 0 {
 			return nil
 		}
@@ -70,32 +70,32 @@ func registerEvents() {
 
 		newMoves := moves[:len(moves)-toTakeBack]
 
-		if len(moveAnnotations) >= toTakeBack {
-			moveAnnotations = moveAnnotations[:len(moveAnnotations)-toTakeBack]
+		if len(app.game.moveAnnotations) >= toTakeBack {
+			app.game.moveAnnotations = app.game.moveAnnotations[:len(app.game.moveAnnotations)-toTakeBack]
 		} else {
-			moveAnnotations = nil
+			app.game.moveAnnotations = nil
 		}
 
 		// Reset game and re-apply moves
-		if initialFEN != "" {
-			f, _ := chess.FEN(initialFEN)
-			game = chess.NewGame(f)
+		if app.game.initialFEN != "" {
+			f, _ := chess.FEN(app.game.initialFEN)
+			app.game.game = chess.NewGame(f)
 		} else {
-			game = chess.NewGame()
+			app.game.game = chess.NewGame()
 		}
 
 		for _, m := range newMoves {
-			game.Move(m)
+			app.game.game.Move(m)
 		}
 
-		lastMove = nil
+		app.game.lastMove = nil
 		if len(newMoves) > 0 {
-			lastMove = newMoves[len(newMoves)-1]
+			app.game.lastMove = newMoves[len(newMoves)-1]
 		}
 
-		isGameOver = false
-		currentViewIndex = -1
-		cachedViewIndex = -2
+		app.game.isGameOver = false
+		app.game.currentViewIndex = -1
+		app.game.cachedViewIndex = -2
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 		updateMoveList()
@@ -104,9 +104,9 @@ func registerEvents() {
 	}))
 
 	doc.Call("getElementById", "style-select").Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) any {
-		currentStyle = this.Get("value").String()
-		setCookie("chess-style", currentStyle, 365)
-		applyStyleClass(currentStyle)
+		app.ui.currentStyle = this.Get("value").String()
+		setCookie("chess-style", app.ui.currentStyle, 365)
+		applyStyleClass(app.ui.currentStyle)
 		loadAssets()
 		return nil
 	}))
@@ -125,7 +125,7 @@ func registerEvents() {
 
 	doc.Call("getElementById", "close-picker").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		doc.Call("getElementById", "piece-picker").Get("classList").Call("add", "hidden")
-		isPromotionMode = false
+		app.ui.isPromotionMode = false
 		return nil
 	}))
 
@@ -191,7 +191,7 @@ func registerEvents() {
 
 	doc.Call("getElementById", "copy-pgn").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		// Create a PGN with standard headers
-		pgn := fmt.Sprintf("[Event \"Casual Game\"]\n[Site \"chess.phonax.com\"]\n[Date \"??.??.??\"]\n[White \"Player\"]\n[Black \"Stockfish\"]\n[Result \"*\"]\n\n%s", game.String())
+		pgn := fmt.Sprintf("[Event \"Casual Game\"]\n[Site \"chess.phonax.com\"]\n[Date \"??.??.??\"]\n[White \"Player\"]\n[Black \"Stockfish\"]\n[Result \"*\"]\n\n%s", app.game.game.String())
 
 		js.Global().Get("navigator").Get("clipboard").Call("writeText", pgn)
 
@@ -221,15 +221,15 @@ func registerEvents() {
 					return nil
 				}
 
-				game = chess.NewGame(f)
-				moveAnnotations = nil
-				currentViewIndex = -1 // Go to latest move
-				lastMove = nil
-				if moves := game.Moves(); len(moves) > 0 {
-					lastMove = moves[len(moves)-1]
+				app.game.game = chess.NewGame(f)
+				app.game.moveAnnotations = nil
+				app.game.currentViewIndex = -1 // Go to latest move
+				app.game.lastMove = nil
+				if moves := app.game.game.Moves(); len(moves) > 0 {
+					app.game.lastMove = moves[len(moves)-1]
 				}
 
-				isGameOver = false
+				app.game.isGameOver = false
 				updateMoveList()
 				updateCapturedPieces()
 				handleBotTurn()
@@ -270,16 +270,16 @@ func updateMoveList() {
 	doc := js.Global().Get("document")
 	list := doc.Call("getElementById", "move-list")
 	list.Set("innerHTML", "")
-	moves := game.Moves()
+	moves := app.game.game.Moves()
 
 	// Initial Position item
 	startDiv := doc.Call("createElement", "div")
 	startDiv.Get("classList").Call("add", "move-row")
 	startSpan := doc.Call("createElement", "span")
 	startSpan.Get("classList").Call("add", "move-item")
-	if currentViewIndex == -1 && len(moves) == 0 {
+	if app.game.currentViewIndex == -1 && len(moves) == 0 {
 		startSpan.Get("classList").Call("add", "current-move")
-	} else if currentViewIndex == -2 { // -2 means we clicked the start
+	} else if app.game.currentViewIndex == -2 { // -2 means we clicked the start
 		startSpan.Get("classList").Call("add", "current-move")
 	}
 	startSpan.Get("dataset").Set("index", "-1")
@@ -288,7 +288,7 @@ func updateMoveList() {
 	list.Call("appendChild", startDiv)
 
 	// If currentViewIndex is -1, we are viewing the latest move
-	highlightIdx := currentViewIndex
+	highlightIdx := app.game.currentViewIndex
 	if highlightIdx == -1 {
 		highlightIdx = len(moves) - 1
 	}
@@ -306,8 +306,8 @@ func updateMoveList() {
 
 		// Move 1
 		m1 := moves[i].String()
-		if i < len(moveAnnotations) && moveAnnotations[i] != "" {
-			m1 += " " + moveAnnotations[i]
+		if i < len(app.game.moveAnnotations) && app.game.moveAnnotations[i] != "" {
+			m1 += " " + app.game.moveAnnotations[i]
 		}
 		s1 := doc.Call("createElement", "span")
 		s1.Get("classList").Call("add", "move-item")
@@ -324,8 +324,8 @@ func updateMoveList() {
 			div.Call("appendChild", doc.Call("createTextNode", " "))
 
 			m2 := moves[i+1].String()
-			if i+1 < len(moveAnnotations) && moveAnnotations[i+1] != "" {
-				m2 += " " + moveAnnotations[i+1]
+			if i+1 < len(app.game.moveAnnotations) && app.game.moveAnnotations[i+1] != "" {
+				m2 += " " + app.game.moveAnnotations[i+1]
 			}
 			s2 := doc.Call("createElement", "span")
 			s2.Get("classList").Call("add", "move-item")
@@ -340,18 +340,18 @@ func updateMoveList() {
 		list.Call("appendChild", div)
 	}
 	// Scroll to bottom only if we're at the latest move
-	if currentViewIndex == -1 {
+	if app.game.currentViewIndex == -1 {
 		list.Set("scrollTop", list.Get("scrollHeight"))
 	}
 }
 
 func jumpToMove(index int) {
-	moves := game.Moves()
+	moves := app.game.game.Moves()
 	// If we click the very last move, we go back to "Live" mode
 	if index == len(moves)-1 {
-		currentViewIndex = -1
+		app.game.currentViewIndex = -1
 	} else {
-		currentViewIndex = index
+		app.game.currentViewIndex = index
 	}
 
 	if index == -1 {
@@ -359,19 +359,19 @@ func jumpToMove(index int) {
 		// we want to show the initial position, so we use a special marker
 		// unless the game is actually empty.
 		if len(moves) > 0 {
-			currentViewIndex = -2 // Internal marker for "Initial Position"
+			app.game.currentViewIndex = -2 // Internal marker for "Initial Position"
 		}
 	}
 
 	// Clear game-over state when navigating history
-	isGameOver = false
+	app.game.isGameOver = false
 	doc := js.Global().Get("document")
 	doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 	updateMoveList()
 
 	// Only trigger bot if we are back in "Live" mode
-	if currentViewIndex == -1 {
+	if app.game.currentViewIndex == -1 {
 		handleBotTurn()
 	}
 }
@@ -384,13 +384,13 @@ func applyStyleClass(style string) {
 
 func loadAssets() {
 	pieces := []string{"wp", "wn", "wb", "wr", "wq", "wk", "bp", "bn", "bb", "br", "bq", "bk", "board"}
-	fmt.Printf("WASM: Loading %d assets for style %s...\n", len(pieces), currentStyle)
+	fmt.Printf("WASM: Loading %d assets for style %s...\n", len(pieces), app.ui.currentStyle)
 	for _, p := range pieces {
 		img := js.Global().Get("Image").New()
 		// Use relative path (no leading slash) so it works in subdirectories like /web/
-		src := fmt.Sprintf("assets/pieces/%s/%s.png", currentStyle, p)
+		src := fmt.Sprintf("assets/pieces/%s/%s.png", app.ui.currentStyle, p)
 		img.Set("src", src)
-		images[p] = img
+		app.ui.images[p] = img
 
 		// Add error logging for images
 		img.Set("onerror", js.FuncOf(func(this js.Value, args []js.Value) any {

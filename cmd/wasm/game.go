@@ -11,52 +11,52 @@ import (
 
 // getViewGame returns a game state representing the move currently being viewed.
 func getViewGame() *chess.Game {
-	if currentViewIndex == -1 {
-		return game
+	if app.game.currentViewIndex == -1 {
+		return app.game.game
 	}
 	// Check cache
 	// Use -1 for "Initial Position" logic in cache
-	lookupIndex := currentViewIndex
+	lookupIndex := app.game.currentViewIndex
 	if lookupIndex == -2 {
 		lookupIndex = -1
 	}
 
-	if cachedViewIndex == lookupIndex && cachedViewGame != nil {
-		return cachedViewGame
+	if app.game.cachedViewIndex == lookupIndex && app.game.cachedViewGame != nil {
+		return app.game.cachedViewGame
 	}
 
 	var tempGame *chess.Game
-	if initialFEN != "" {
-		f, _ := chess.FEN(initialFEN)
+	if app.game.initialFEN != "" {
+		f, _ := chess.FEN(app.game.initialFEN)
 		tempGame = chess.NewGame(f)
 	} else {
 		tempGame = chess.NewGame()
 	}
-	moves := game.Moves()
+	moves := app.game.game.Moves()
 	for i := 0; i <= lookupIndex && i < len(moves); i++ {
 		tempGame.Move(moves[i])
 	}
 
-	cachedViewGame = tempGame
-	cachedViewIndex = lookupIndex
+	app.game.cachedViewGame = tempGame
+	app.game.cachedViewIndex = lookupIndex
 	return tempGame
 }
 
 // executeMove is the central point for ALL movements.
 func executeMove(moveStr string, relay bool) {
 	// 1. Handle Branching from History
-	if currentViewIndex != -1 {
-		truncIdx := currentViewIndex
+	if app.game.currentViewIndex != -1 {
+		truncIdx := app.game.currentViewIndex
 		if truncIdx == -2 {
 			truncIdx = -1
 		}
 		truncateGameAt(truncIdx)
-		currentViewIndex = -1 // Back to live
+		app.game.currentViewIndex = -1 // Back to live
 	}
 
 	// 2. Find the move in the list of legal moves for the CURRENT game
 	var target *chess.Move
-	for _, m := range game.ValidMoves() {
+	for _, m := range app.game.game.ValidMoves() {
 		// Use coordinate comparison (UCI standard)
 		if m.String() == moveStr {
 			target = m
@@ -67,44 +67,44 @@ func executeMove(moveStr string, relay bool) {
 	// 2. If move is valid, apply it
 	if target != nil {
 		// If we are making a move, the game is no longer over (unless the new move results in mate)
-		isGameOver = false
+		app.game.isGameOver = false
 		doc := js.Global().Get("document")
 		doc.Call("getElementById", "checkmate-alert").Get("classList").Call("add", "hidden")
 
 		// Record state BEFORE move
-		lastPositionEval = evalScore
-		lastMoveSide = game.Position().Turn()
+		app.engine.lastPositionEval = app.ui.evalScore
+		app.engine.lastMoveSide = app.game.game.Position().Turn()
 
 		// Show what the engine thought was best for the position we JUST left
 		annotation := ""
-		if lastHumanSuggestion != "" && relay {
-			text := "Best move was: " + lastHumanSuggestion
-			if moveStr == lastHumanSuggestion {
+		if app.engine.lastHumanSuggestion != "" && relay {
+			text := "Best move was: " + app.engine.lastHumanSuggestion
+			if moveStr == app.engine.lastHumanSuggestion {
 				text += " 👍"
 				annotation = "🟢"
 			}
 			showSuggestion(text)
 		}
-		moveAnnotations = append(moveAnnotations, annotation)
-		lastHumanSuggestion = "" // Clear for next turn
+		app.game.moveAnnotations = append(app.game.moveAnnotations, annotation)
+		app.engine.lastHumanSuggestion = "" // Clear for next turn
 
 		// Trigger animation
-		animMove = target
-		animPiece = game.Position().Board().Piece(target.S1())
-		animProgress = 0.0
-		animStartTime = js.Global().Get("performance").Call("now").Float()
+		app.anim.move = target
+		app.anim.piece = app.game.game.Position().Board().Piece(target.S1())
+		app.anim.progress = 0.0
+		app.anim.startTime = js.Global().Get("performance").Call("now").Float()
 
-		if err := game.Move(target); err == nil {
-			lastMove = target
+		if err := app.game.game.Move(target); err == nil {
+			app.game.lastMove = target
 			updateMoveList()
 			checkGameState()
 			playSound(target)
 
 			// Clear selection
-			selectedPos = chess.NoSquare
+			app.game.selectedPos = chess.NoSquare
 
 			// 3. Multiplayer Relay
-			if relay && isMultiplayer {
+			if relay && app.multi.isActive {
 				relayMoveToOpponent(moveStr)
 			}
 
@@ -120,14 +120,14 @@ func executeMove(moveStr string, relay bool) {
 }
 
 func handleBoardClick(col, row int) {
-	if isGameOver {
+	if app.game.isGameOver {
 		return
 	}
 	sq := chess.Square(row*8 + col)
 	fmt.Printf("WASM: Board Click: %s (col=%d, row=%d)\n", sq.String(), col, row)
 
-	if isSetupMode {
-		setupSquare = sq
+	if app.game.isSetupMode {
+		app.game.setupSquare = sq
 		js.Global().Get("document").Call("getElementById", "piece-picker").Get("classList").Call("remove", "hidden")
 		return
 	}
@@ -136,22 +136,22 @@ func handleBoardClick(col, row int) {
 	pos := viewGame.Position()
 	turn := pos.Turn()
 
-	if selectedPos == chess.NoSquare {
+	if app.game.selectedPos == chess.NoSquare {
 		p := pos.Board().Piece(sq)
 		// Allow selecting pieces even if it's not the player's turn (for visualization)
 		if p != chess.NoPiece && p.Color() == turn {
-			selectedPos = sq
+			app.game.selectedPos = sq
 		}
 	} else {
 		// Only allow executing moves if it's the player's turn
-		if turn != playerColor {
-			selectedPos = chess.NoSquare
+		if turn != app.multi.playerColor {
+			app.game.selectedPos = chess.NoSquare
 			return
 		}
 
 		var targetMoves []*chess.Move
 		for _, m := range viewGame.ValidMoves() {
-			if m.S1() == selectedPos && m.S2() == sq {
+			if m.S1() == app.game.selectedPos && m.S2() == sq {
 				targetMoves = append(targetMoves, m)
 			}
 		}
@@ -160,32 +160,32 @@ func handleBoardClick(col, row int) {
 			executeMove(targetMoves[0].String(), true)
 		} else if len(targetMoves) > 1 {
 			// Promotion detected
-			isPromotionMode = true
-			promoSourceSquare = selectedPos
-			promoTargetSquare = sq
+			app.ui.isPromotionMode = true
+			app.ui.promoSourceSquare = app.game.selectedPos
+			app.ui.promoTargetSquare = sq
 			showPromotionPicker(turn)
 		} else {
 			p := pos.Board().Piece(sq)
 			if p != chess.NoPiece && p.Color() == turn {
-				selectedPos = sq
+				app.game.selectedPos = sq
 			} else {
-				selectedPos = chess.NoSquare
+				app.game.selectedPos = chess.NoSquare
 			}
 		}
 	}
 }
 
 func checkGameState() {
-	if game.Outcome() != chess.NoOutcome {
-		isGameOver = true
+	if app.game.game.Outcome() != chess.NoOutcome {
+		app.game.isGameOver = true
 		alert := js.Global().Get("document").Call("getElementById", "checkmate-alert")
-		alert.Call("querySelector", "#winner-text").Set("innerText", "Outcome: "+game.Outcome().String())
+		alert.Call("querySelector", "#winner-text").Set("innerText", "Outcome: "+app.game.game.Outcome().String())
 		alert.Get("classList").Call("remove", "hidden")
 	}
 }
 
 func truncateGameAt(index int) {
-	allMoves := game.Moves()
+	allMoves := app.game.game.Moves()
 	if index < -1 || index >= len(allMoves) {
 		return
 	}
@@ -193,14 +193,14 @@ func truncateGameAt(index int) {
 	newMoves := allMoves[:index+1]
 
 	// Truncate annotations to match
-	if len(moveAnnotations) > len(newMoves) {
-		moveAnnotations = moveAnnotations[:len(newMoves)]
+	if len(app.game.moveAnnotations) > len(newMoves) {
+		app.game.moveAnnotations = app.game.moveAnnotations[:len(newMoves)]
 	}
 
 	// Reset game and re-apply moves
 	var newGame *chess.Game
-	if initialFEN != "" {
-		f, _ := chess.FEN(initialFEN)
+	if app.game.initialFEN != "" {
+		f, _ := chess.FEN(app.game.initialFEN)
 		newGame = chess.NewGame(f)
 	} else {
 		newGame = chess.NewGame()
@@ -209,11 +209,11 @@ func truncateGameAt(index int) {
 	for _, m := range newMoves {
 		newGame.Move(m)
 	}
-	game = newGame
+	app.game.game = newGame
 
 	// Invalidate view cache
-	cachedViewIndex = -2
-	cachedViewGame = nil
+	app.game.cachedViewIndex = -2
+	app.game.cachedViewGame = nil
 }
 
 func playSound(m *chess.Move) {
