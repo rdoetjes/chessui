@@ -73,7 +73,9 @@ func handleSetupToggle() {
 		}
 
 		if turnColor != app.multi.playerColor {
-			fmt.Printf("WASM: Setup complete. Bot turn detected (%v)\n", turnColor)
+			fmt.Printf("WASM: Setup complete. Bot turn detected (%v). Player is %v\n", turnColor, app.multi.playerColor)
+		} else {
+			fmt.Printf("WASM: Setup complete. Player turn detected (%v)\n", turnColor)
 		}
 
 		handleBotTurn()

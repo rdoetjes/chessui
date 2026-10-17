@@ -132,13 +132,14 @@ func processBotResponse(moveStr string) {
 	}
 
 	// If it's currently the human's turn, this is a background suggestion.
-	if app.game.game.Position().Turn() == app.multi.playerColor {
+	turn := app.game.game.Position().Turn()
+	if turn == app.multi.playerColor {
 		app.engine.lastHumanSuggestion = moveStr
 		return
 	}
 
 	// If it's the bot's turn, this is the move it wants to play.
-	fmt.Printf("WASM: Executing BOT move: %s\n", moveStr)
+	fmt.Printf("WASM: Executing BOT move: %s (Turn: %v, Player: %v)\n", moveStr, turn, app.multi.playerColor)
 	executeMove(moveStr, false)
 }
 

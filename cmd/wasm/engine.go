@@ -82,8 +82,6 @@ func connect(host, roomID string, isSecure bool) {
 			} else {
 				sendUCI("player_color " + app.multi.multiplayerColor)
 			}
-		} else {
-			app.multi.playerColor = chess.White
 		}
 		handleBotTurn()
 		return nil
@@ -206,7 +204,13 @@ func reconnectSession(roomID string, color string) {
 	app.game.currentViewIndex = -1
 	app.game.cachedViewIndex = -2
 	app.game.initialFEN = ""
-	app.game.isStarted = true
+
+	if app.multi.isActive {
+		app.game.isStarted = true
+	} else {
+		app.game.isStarted = false
+	}
+
 	updateMoveList()
 	updateCapturedPieces()
 

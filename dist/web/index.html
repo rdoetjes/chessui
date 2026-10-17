@@ -67,7 +67,7 @@
                 <button id="new-game">New Game</button>
                 <button id="take-back">Take Back</button>
 	                <button id="setup-board">Setup Board</button>
-	                <button id="test-sound" hidden="true" ="background: #444; font-size: 0.7rem; padding: 4px;">Test Sound</button>
+	                <button id="test-sound" hidden="true" style="background: #444; font-size: 0.7rem; padding: 4px;">Test Sound</button>
 
 	                <div class="panel multiplayer-panel">
                     <h2>Multiplayer</h2>
@@ -78,59 +78,13 @@
                             <option value="human">Head to Head</option>
                         </select>
                     </div>
-                    <div id="multiplayer-buttons" class="control-group hidden">
-                        <button id="btn-host-open">Host Game</button>
-                        <button id="btn-join-open">Join Game</button>
-                    </div>
-                </div>
-
-                <!-- New Game Popup -->
-                <div id="popup-new-game" class="popup hidden">
-                    <h3>Start New Game</h3>
-                    <div class="control-group">
-                        <label>Your Color</label>
-                        <select id="new-game-color">
-                            <option value="white">White</option>
-                            <option value="black">Black</option>
-                        </select>
-                    </div>
-                    <button id="btn-new-game-start">Start Game</button>
-                    <button id="btn-new-game-cancel" class="cancel-btn">Cancel</button>
-                </div>
-
-                <!-- Host Popup -->
-                <div id="popup-host" class="popup hidden">
-                    <h3>Host New Game</h3>
-                    <div class="control-group">
-                        <label>Your Color</label>
-                        <select id="host-color">
-                            <option value="white">White</option>
-                            <option value="black">Black</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Session ID</label>
-                        <div class="input-row">
-                            <input type="text" id="host-uuid" readonly>
-                            <button id="btn-copy-uuid">Copy</button>
-                        </div>
-                    </div>
-                    <button id="btn-host-start">Start Hosting</button>
-                    <button id="btn-host-cancel" class="cancel-btn">Cancel</button>
-                </div>
-
-                <!-- Join Popup -->
-                <div id="popup-join" class="popup hidden">
-                    <h3>Join Game</h3>
-                    <div class="control-group">
-                        <label>Enter Session ID</label>
-                        <input type="text" id="join-uuid" placeholder="Paste UUID here">
-                    </div>
-                    <button id="btn-join-start">Connect</button>
-                    <button id="btn-join-cancel" class="cancel-btn">Cancel</button>
-                </div>
-            </div>
-        </div>
+    	                <div id="multiplayer-buttons" class="control-group hidden">
+    	                        <button id="btn-host-open">Host Game</button>
+    	                        <button id="btn-join-open">Join Game</button>
+    	                    </div>
+    	                </div>
+    	            </div>
+    	        </div>
 
         <div class="main-content">
             <div class="game-container">
@@ -182,6 +136,51 @@
             </div>
         </div>
     </div>
+
+    <!-- Popups -->
+    <div id="popup-new-game" class="popup hidden">
+        <h3>Start New Game</h3>
+        <div class="control-group">
+            <label>Your Color</label>
+            <select id="new-game-color">
+                <option value="white">White</option>
+                <option value="black">Black</option>
+            </select>
+        </div>
+        <button id="btn-new-game-start">Start Game</button>
+        <button id="btn-new-game-cancel" class="cancel-btn">Cancel</button>
+    </div>
+
+    <div id="popup-host" class="popup hidden">
+        <h3>Host New Game</h3>
+        <div class="control-group">
+            <label>Your Color</label>
+            <select id="host-color">
+                <option value="white">White</option>
+                <option value="black">Black</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Session ID</label>
+            <div class="input-row">
+                <input type="text" id="host-uuid" readonly>
+                <button id="btn-copy-uuid">Copy</button>
+            </div>
+        </div>
+        <button id="btn-host-start">Start Hosting</button>
+        <button id="btn-host-cancel" class="cancel-btn">Cancel</button>
+    </div>
+
+    <div id="popup-join" class="popup hidden">
+        <h3>Join Game</h3>
+        <div class="control-group">
+            <label>Enter Session ID</label>
+            <input type="text" id="join-uuid" placeholder="Paste UUID here">
+        </div>
+        <button id="btn-join-start">Connect</button>
+        <button id="btn-join-cancel" class="cancel-btn">Cancel</button>
+    </div>
+
     <script>
         const go = new Go();
         const v = "5.19-" + new Date().getTime();
