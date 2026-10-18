@@ -21,6 +21,11 @@ func registerGeminiEvents() {
 			// Try to load models automatically if we have a key
 			go refreshModels(key)
 		}
+
+		color := getCookie("gemini-color")
+		if color != "" {
+			doc.Call("getElementById", "gemini-color-select").Set("value", color)
+		}
 		return nil
 	}))
 
@@ -37,6 +42,7 @@ func registerGeminiEvents() {
 	doc.Call("getElementById", "btn-start-analysis").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		key := doc.Call("getElementById", "gemini-key-inline").Get("value").String()
 		model := doc.Call("getElementById", "gemini-model-select").Get("value").String()
+		color := doc.Call("getElementById", "gemini-color-select").Get("value").String()
 
 		if key == "" {
 			js.Global().Call("alert", "Please enter your Gemini API Key first.")
@@ -44,7 +50,8 @@ func registerGeminiEvents() {
 		}
 		setCookie("gemini-api-key", key, 365)
 		setCookie("gemini-model", model, 365)
-		startAnalysis(key, model)
+		setCookie("gemini-color", color, 365)
+		startAnalysis(key, model, color)
 		return nil
 	}))
 
@@ -207,7 +214,7 @@ func refreshModels(apiKey string) {
 	}
 }
 
-func startAnalysis(apiKey, model string) {
+func startAnalysis(apiKey, model, playerColor string) {
 	doc := js.Global().Get("document")
 
 	doc.Call("getElementById", "analysis-status").Get("classList").Call("remove", "hidden")
@@ -218,7 +225,7 @@ func startAnalysis(apiKey, model string) {
 	pgn := fmt.Sprintf("[Event \"Casual Game\"]\n[Site \"chess.phonax.com\"]\n[Date \"??.??.??\"]\n[White \"Player\"]\n[Black \"Bot\"]\n[Result \"*\"]\n\n%s", app.game.game.String())
 
 	go func() {
-		analysis, err := fetchGeminiAnalysis(apiKey, model, pgn)
+		analysis, err := fetchGeminiAnalysis(apiKey, model, playerColor, pgn)
 		if err != nil {
 			doc.Call("getElementById", "analysis-status").Set("innerText", "Error: "+err.Error())
 			return
@@ -235,22 +242,48 @@ type GeminiAnalysis struct {
 }
 
 type MoveAnalysis struct {
-	Move        string `json:"move"`
-	Explanation string `json:"explanation"`
+	MoveNumber       int    `json:"move_number"`
+	Move             string `json:"move"`
+	Explanation      string `json:"explanation"`
+	OpponentResponse string `json:"opponent_response"`
 }
 
-func fetchGeminiAnalysis(apiKey, model, pgn string) (*GeminiAnalysis, error) {
-	prompt := fmt.Sprintf(`You are a professional chess coach. Analyze the following chess game in PGN format. Identify 2-3 key good moves and 2-3 key bad moves (mistakes or blunders). For each, explain simply why it was good or bad. Finally, give 3 concise tips for the player to improve in their next game.
+func fetchGeminiAnalysis(apiKey, model, playerColor, pgn string) (*GeminiAnalysis, error) {
+	prompt := fmt.Sprintf(`You are a professional chess coach. Analyze the following chess game in PGN format.
+The user played as %s. Focus primarily on their moves, but also explain the opponent's strategy.
+
+Identify 3-5 key good moves and 3-5 key bad moves (mistakes or blunders) made by the player (%s).
+For each move identified:
+1. Provide the move number.
+2. Provide the move in algebraic notation.
+3. Explain simply why it was good or bad for the %s player.
+4. Critically, explain the deeper thoughts/strategy behind the opponent's subsequent response (attack or defense).
+
+Finally, give 3 concise tips for the %s player to improve.
 
 PGN:
 %s
 
 Format your response ONLY as a JSON object with the following structure:
 {
-  "good_moves": [{"move": "move in algebraic notation", "explanation": "short explanation"}],
-  "bad_moves": [{"move": "move in algebraic notation", "explanation": "short explanation"}],
+  "good_moves": [
+    {
+      "move_number": 5,
+      "move": "Nf3",
+      "explanation": "Develops a piece and controls the center.",
+      "opponent_response": "The opponent responded with d6 to solidify their center and prepare development."
+    }
+  ],
+  "bad_moves": [
+    {
+      "move_number": 12,
+      "move": "Bxh7",
+      "explanation": "A premature sacrifice that doesn't lead to a mate.",
+      "opponent_response": "The opponent calmly took with Kxh7 and defended the kingside with Nf6."
+    }
+  ],
   "tips": ["tip 1", "tip 2", "tip 3"]
-}`, pgn)
+}`, playerColor, playerColor, playerColor, playerColor, pgn)
 
 	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey)
 
@@ -390,13 +423,23 @@ func displayAnalysis(analysis *GeminiAnalysis) {
 
 			header := doc.Call("createElement", "div")
 			header.Get("classList").Call("add", "move-header")
-			header.Set("innerText", m.Move)
+			header.Set("innerText", fmt.Sprintf("%d. %s", m.MoveNumber, m.Move))
 			div.Call("appendChild", header)
 
 			exp := doc.Call("createElement", "div")
 			exp.Get("classList").Call("add", "move-explanation")
 			exp.Set("innerText", m.Explanation)
 			div.Call("appendChild", exp)
+
+			if m.OpponentResponse != "" {
+				opp := doc.Call("createElement", "div")
+				opp.Get("style").Set("marginTop", "8px")
+				opp.Get("style").Set("fontSize", "0.85rem")
+				opp.Get("style").Set("fontStyle", "italic")
+				opp.Get("style").Set("color", "#aaa")
+				opp.Set("innerText", "Opponent strategy: "+m.OpponentResponse)
+				div.Call("appendChild", opp)
+			}
 
 			resultsDiv.Call("appendChild", div)
 		}
@@ -417,13 +460,23 @@ func displayAnalysis(analysis *GeminiAnalysis) {
 
 			header := doc.Call("createElement", "div")
 			header.Get("classList").Call("add", "move-header")
-			header.Set("innerText", m.Move)
+			header.Set("innerText", fmt.Sprintf("%d. %s", m.MoveNumber, m.Move))
 			div.Call("appendChild", header)
 
 			exp := doc.Call("createElement", "div")
 			exp.Get("classList").Call("add", "move-explanation")
 			exp.Set("innerText", m.Explanation)
 			div.Call("appendChild", exp)
+
+			if m.OpponentResponse != "" {
+				opp := doc.Call("createElement", "div")
+				opp.Get("style").Set("marginTop", "8px")
+				opp.Get("style").Set("fontSize", "0.85rem")
+				opp.Get("style").Set("fontStyle", "italic")
+				opp.Get("style").Set("color", "#aaa")
+				opp.Set("innerText", "Opponent strategy: "+m.OpponentResponse)
+				div.Call("appendChild", opp)
+			}
 
 			resultsDiv.Call("appendChild", div)
 		}

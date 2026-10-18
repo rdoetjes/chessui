@@ -196,10 +196,22 @@
                     <input type="password" id="gemini-key-inline" placeholder="Paste your API key here" style="flex: 1; min-width: 0;">
                     <button id="btn-refresh-models" style="padding: 5px 12px; margin: 0; font-size: 0.8rem; white-space: nowrap; width: auto; flex-shrink: 0; height: 38px;">Load Models</button>
                 </div>
-                <label>Model</label>
-                <select id="gemini-model-select" style="width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 5px; box-sizing: border-box; height: 38px;">
-                    <option value="gemini-1.5-flash">gemini-1.5-flash (Default)</option>
-                </select>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label>Model</label>
+                        <select id="gemini-model-select" style="width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; height: 38px;">
+                            <option value="gemini-1.5-flash">gemini-1.5-flash (Default)</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Your Color</label>
+                        <select id="gemini-color-select" style="width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; height: 38px;">
+                            <option value="white">White</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="model-status" style="font-size: 0.75rem; color: var(--text-muted);">Enter key and click 'Load Models' if default fails.</div>
             </div>
 
