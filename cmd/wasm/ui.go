@@ -36,6 +36,7 @@ func registerEvents() {
 	registerSettingsEvents()
 	registerMultiplayerEvents()
 	registerHistoryEvents()
+	registerGeminiEvents()
 	initPiecePicker()
 	registerDebugEvents()
 }
@@ -161,18 +162,35 @@ func registerGameControlEvents() {
 		go func() {
 			promise := js.Global().Get("navigator").Get("clipboard").Call("readText")
 			success := js.FuncOf(func(this js.Value, args []js.Value) any {
-				pgnText := args[0].String()
-				if pgnText == "" {
+				importText := strings.TrimSpace(args[0].String())
+				if importText == "" {
 					return nil
 				}
 
-				f, err := chess.PGN(strings.NewReader(pgnText))
-				if err != nil {
-					fmt.Printf("WASM: PGN Import Error: %v\n", err)
-					return nil
+				// 1. Try PGN
+				f, err := chess.PGN(strings.NewReader(importText))
+				if err == nil {
+					app.game.game = chess.NewGame(f)
+					// Check if we actually got any moves or if it was just a blank PGN
+					if len(app.game.game.Moves()) == 0 {
+						// If 0 moves, maybe it's a FEN?
+						if f2, err2 := chess.FEN(importText); err2 == nil {
+							app.game.game = chess.NewGame(f2)
+							app.game.initialFEN = importText
+						}
+					}
+				} else {
+					// 2. Try FEN if PGN failed
+					if f2, err2 := chess.FEN(importText); err2 == nil {
+						app.game.game = chess.NewGame(f2)
+						app.game.initialFEN = importText
+					} else {
+						fmt.Printf("WASM: Import Error (PGN: %v, FEN: %v)\n", err, err2)
+						js.Global().Call("alert", "Could not parse PGN or FEN")
+						return nil
+					}
 				}
 
-				app.game.game = chess.NewGame(f)
 				app.game.moveAnnotations = nil
 				app.game.currentViewIndex = -1
 				app.game.lastMove = nil
@@ -180,8 +198,6 @@ func registerGameControlEvents() {
 					app.game.lastMove = moves[len(moves)-1]
 				}
 
-				// Set game over based on imported result, but only if it's actually terminal by position
-				// Actually, we trust the PGN for the initial load
 				app.game.isGameOver = app.game.game.Outcome() != chess.NoOutcome
 				app.game.isStarted = true
 

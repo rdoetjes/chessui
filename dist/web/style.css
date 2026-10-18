@@ -481,6 +481,53 @@ button:active {
     gap: 15px;
 }
 
+.popup h3 {
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.cancel-btn {
+    background: #555;
+    margin-top: 5px;
+}
+
+input[type="text"], input[type="password"] {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.analysis-move {
+    margin-bottom: 15px;
+    border-left: 3px solid var(--accent-color);
+    padding-left: 10px;
+}
+
+.analysis-move.good { border-color: #4caf50; }
+.analysis-move.bad { border-color: #f44336; }
+
+.move-header {
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+}
+
+.move-explanation {
+    margin-top: 5px;
+    color: #ccc;
+}
+
+.tips-section {
+    margin-top: 20px;
+    padding: 10px;
+    background: rgba(61, 90, 254, 0.1);
+    border-radius: 4px;
+}
+
 #piece-picker {
     position: absolute;
     top: 50%;

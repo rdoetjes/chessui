@@ -130,6 +130,7 @@
 	                <div class="move-controls" style="display: flex; gap: 5px; margin-top: 10px; width: 100%;">
 	                    <button id="copy-pgn" style="margin-top: 0; flex: 1; width: auto; font-size: 0.8rem; padding: 5px;">Copy PGN</button>
 	                    <button id="import-pgn" style="margin-top: 0; flex: 1; width: auto; font-size: 0.8rem; padding: 5px;">Import PGN</button>
+	                    <button id="analyze-game" style="margin-top: 0; flex: 1; width: auto; font-size: 0.8rem; padding: 5px; background: #6b4c9a;">Analyze Game</button>
 	                </div>
 	                <div id="engine-suggestion" class="suggestion-text"></div>
                 <div id="engine-info" class="small-text"></div>
@@ -179,6 +180,26 @@
         </div>
         <button id="btn-join-start">Connect</button>
         <button id="btn-join-cancel" class="cancel-btn">Cancel</button>
+    </div>
+
+    <div id="popup-gemini" class="popup hidden">
+        <h3>Gemini AI Analysis</h3>
+        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px;">To analyze your game with AI, please enter your Gemini API Key. It will be saved in your browser cookies.</p>
+        <div class="control-group">
+            <label>Gemini API Key</label>
+            <input type="password" id="gemini-key" placeholder="Paste your API key here">
+        </div>
+        <button id="btn-gemini-ok">OK</button>
+        <button id="btn-gemini-cancel" class="cancel-btn">Cancel</button>
+    </div>
+
+    <div id="popup-analysis" class="popup hidden" style="width: 500px; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column;">
+        <h3 id="analysis-title">Game Analysis</h3>
+        <div id="analysis-content" style="flex: 1; overflow-y: auto; text-align: left; font-size: 0.9rem; line-height: 1.4; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 15px;">
+            <div id="analysis-status">Analyzing moves...</div>
+            <div id="analysis-results" class="hidden"></div>
+        </div>
+        <button id="btn-analysis-close">Close</button>
     </div>
 
     <script>
