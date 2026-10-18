@@ -59,10 +59,10 @@ func handleBotTurn() {
 		return
 	}
 
-	// If we are viewing history, the bot shouldn't move.
-	if app.game.currentViewIndex != -1 {
-		return
-	}
+	// If we are viewing history, we still want to analyze the position
+	// to update the evaluation bar, but the execution block in
+	// processBotResponse will ensure we don't actually make a move.
+	// (We removed the early return here)
 
 	currentMoveIndex++
 	myMoveIndex := currentMoveIndex

@@ -139,7 +139,7 @@ func processUCIResponse(msg string) {
 				sVal = -10.0
 			}
 		}
-		if app.game.game.Position().Turn() == chess.Black {
+		if getViewGame().Position().Turn() == chess.Black {
 			sVal = -sVal
 		}
 		app.ui.evalScore = sVal
@@ -147,7 +147,8 @@ func processUCIResponse(msg string) {
 
 		// Check for move quality on the move just made
 		// Only rate if we have reached a reasonable depth to avoid noise
-		if info.Depth >= 8 && len(app.game.moveAnnotations) > 0 && app.engine.lastMoveSide == app.multi.playerColor {
+		// AND we are in the "Live" view (not history)
+		if app.game.currentViewIndex == -1 && info.Depth >= 8 && len(app.game.moveAnnotations) > 0 && app.engine.lastMoveSide == app.multi.playerColor {
 			lastIdx := len(app.game.moveAnnotations) - 1
 			var diff float64
 			if app.engine.lastMoveSide == chess.White {

@@ -428,11 +428,7 @@ func jumpToMove(index int) {
 	app.game.isGameOver = false
 
 	updateMoveList()
-
-	// Only trigger bot if we are back in "Live" mode
-	if app.game.currentViewIndex == -1 {
-		handleBotTurn()
-	}
+	handleBotTurn()
 }
 
 func applyStyleClass(style string) {
