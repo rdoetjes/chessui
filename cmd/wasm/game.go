@@ -60,77 +60,94 @@ func getViewGame() *chess.Game {
 
 // executeMove is the central point for ALL movements.
 func executeMove(moveStr string, relay bool) {
-	// 1. Handle Branching from History
-	if app.game.currentViewIndex != -1 {
-		truncIdx := app.game.currentViewIndex
-		if truncIdx == -2 {
-			truncIdx = -1
-		}
-		truncateGameAt(truncIdx)
-		app.game.currentViewIndex = -1 // Back to live
+	handleHistoryBranching()
+
+	target := findMove(moveStr)
+	if target == nil {
+		fmt.Printf("WASM: Illegal move received: %s\n", moveStr)
+		return
 	}
 
-	// 2. Find the move in the list of legal moves for the CURRENT game
-	var target *chess.Move
+	applyMove(target, moveStr, relay)
+}
+
+func handleHistoryBranching() {
+	if app.game.currentViewIndex == -1 {
+		return
+	}
+
+	truncIdx := app.game.currentViewIndex
+	if truncIdx == -2 {
+		truncIdx = -1
+	}
+	truncateGameAt(truncIdx)
+	app.game.currentViewIndex = -1 // Back to live
+}
+
+func findMove(moveStr string) *chess.Move {
 	for _, m := range app.game.game.ValidMoves() {
-		// Use coordinate comparison (UCI standard)
 		if m.String() == moveStr {
-			target = m
-			break
+			return m
 		}
 	}
+	return nil
+}
 
-	// 2. If move is valid, apply it
-	if target != nil {
-		// If we are making a move, the game is no longer over (unless the new move results in mate)
-		app.game.isGameOver = false
+func applyMove(target *chess.Move, moveStr string, relay bool) {
+	app.game.isGameOver = false
 
-		// Record state BEFORE move
-		app.engine.lastPositionEval = app.ui.evalScore
-		app.engine.lastMoveSide = app.game.game.Position().Turn()
+	// Record state BEFORE move
+	app.engine.lastPositionEval = app.ui.evalScore
+	app.engine.lastMoveSide = app.game.game.Position().Turn()
 
-		// Show what the engine thought was best for the position we JUST left
-		annotation := ""
-		if app.engine.lastHumanSuggestion != "" && relay {
-			text := "Best move was: " + app.engine.lastHumanSuggestion
-			if moveStr == app.engine.lastHumanSuggestion {
-				text += " 👍"
-				annotation = "🟢"
-			}
-			showSuggestion(text)
-		}
-		app.game.moveAnnotations = append(app.game.moveAnnotations, annotation)
-		app.engine.lastHumanSuggestion = "" // Clear for next turn
+	updateMoveAnnotations(moveStr, relay)
+	triggerMoveAnimation(target)
 
-		// Trigger animation
-		app.anim.move = target
-		app.anim.piece = app.game.game.Position().Board().Piece(target.S1())
-		app.anim.progress = 0.0
-		app.anim.startTime = js.Global().Get("performance").Call("now").Float()
-
-		if err := app.game.game.Move(target); err == nil {
-			app.game.lastMove = target
-			updateMoveList()
-			checkGameState()
-			playSound(target)
-
-			// Clear selection
-			app.game.selectedPos = chess.NoSquare
-
-			// 3. Multiplayer Relay
-			if relay && app.multi.isActive {
-				relayMoveToOpponent(moveStr)
-			}
-
-			// 4. Kick off the engine for the next turn
-			handleBotTurn()
-			updateCapturedPieces()
-		} else {
-			fmt.Printf("WASM: Move error: %v\n", err)
-		}
+	if err := app.game.game.Move(target); err == nil {
+		postMoveCleanup(target, moveStr, relay)
 	} else {
-		fmt.Printf("WASM: Illegal move received from engine: %s\n", moveStr)
+		fmt.Printf("WASM: Move error: %v\n", err)
 	}
+}
+
+func updateMoveAnnotations(moveStr string, relay bool) {
+	annotation := ""
+	if app.engine.lastHumanSuggestion != "" && relay {
+		text := "Best move was: " + app.engine.lastHumanSuggestion
+		if moveStr == app.engine.lastHumanSuggestion {
+			text += " 👍"
+			annotation = "🟢"
+		}
+		showSuggestion(text)
+	}
+	app.game.moveAnnotations = append(app.game.moveAnnotations, annotation)
+	app.engine.lastHumanSuggestion = "" // Clear for next turn
+}
+
+func triggerMoveAnimation(target *chess.Move) {
+	app.anim.move = target
+	app.anim.piece = app.game.game.Position().Board().Piece(target.S1())
+	app.anim.progress = 0.0
+	app.anim.startTime = js.Global().Get("performance").Call("now").Float()
+}
+
+func postMoveCleanup(target *chess.Move, moveStr string, relay bool) {
+	app.game.lastMove = target
+	updateMoveList()
+	checkGameState()
+	playSound(target)
+
+	// Clear selection
+	app.game.selectedPos = chess.NoSquare
+
+	// Multiplayer Relay
+	if relay && app.multi.isActive {
+		relayMoveToOpponent(moveStr)
+	}
+
+	// Kick off the engine for the next turn
+	handleBotTurn()
+	updateCapturedPieces()
 }
 
 func handleBoardClick(col, row int) {
