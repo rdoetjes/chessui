@@ -257,7 +257,7 @@ For each move identified:
 1. Provide the move number.
 2. Provide the move in algebraic notation.
 3. Explain simply why it was good or bad for the %s player.
-4. Critically, explain the deeper thoughts/strategy behind the opponent's subsequent response (attack or defense).
+4. Critically, explain the deeper thoughts/strategy behind the opponent's subsequent response (attack or defense). Do this in the style of Levy Rozman.
 
 Finally, give 3 concise tips for the %s player to improve.
 
