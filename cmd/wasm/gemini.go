@@ -12,27 +12,39 @@ func registerGeminiEvents() {
 	doc := js.Global().Get("document")
 
 	doc.Call("getElementById", "analyze-game").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		app.game.isGameOver = false
+		doc.Call("getElementById", "popup-analysis").Get("classList").Call("remove", "hidden")
+
 		key := getCookie("gemini-api-key")
-		if key == "" {
-			doc.Call("getElementById", "popup-gemini").Get("classList").Call("remove", "hidden")
-		} else {
-			startAnalysis(key)
-		}
-		return nil
-	}))
-
-	doc.Call("getElementById", "btn-gemini-ok").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
-		key := doc.Call("getElementById", "gemini-key").Get("value").String()
 		if key != "" {
-			setCookie("gemini-api-key", key, 365)
-			doc.Call("getElementById", "popup-gemini").Get("classList").Call("add", "hidden")
-			startAnalysis(key)
+			doc.Call("getElementById", "gemini-key-inline").Set("value", key)
+			// Try to load models automatically if we have a key
+			go refreshModels(key)
 		}
 		return nil
 	}))
 
-	doc.Call("getElementById", "btn-gemini-cancel").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
-		doc.Call("getElementById", "popup-gemini").Get("classList").Call("add", "hidden")
+	doc.Call("getElementById", "btn-refresh-models").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		key := doc.Call("getElementById", "gemini-key-inline").Get("value").String()
+		if key == "" {
+			js.Global().Call("alert", "Please enter your Gemini API Key first.")
+			return nil
+		}
+		go refreshModels(key)
+		return nil
+	}))
+
+	doc.Call("getElementById", "btn-start-analysis").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		key := doc.Call("getElementById", "gemini-key-inline").Get("value").String()
+		model := doc.Call("getElementById", "gemini-model-select").Get("value").String()
+
+		if key == "" {
+			js.Global().Call("alert", "Please enter your Gemini API Key first.")
+			return nil
+		}
+		setCookie("gemini-api-key", key, 365)
+		setCookie("gemini-model", model, 365)
+		startAnalysis(key, model)
 		return nil
 	}))
 
@@ -42,22 +54,132 @@ func registerGeminiEvents() {
 	}))
 }
 
-func startAnalysis(apiKey string) {
+func refreshModels(apiKey string) {
+	doc := js.Global().Get("document")
+	statusDiv := doc.Call("getElementById", "model-status")
+	selectEl := doc.Call("getElementById", "gemini-model-select")
+	savedModel := getCookie("gemini-model")
+
+	statusDiv.Set("innerText", "Loading models...")
+
+	url := "https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey
+	promise := js.Global().Call("fetch", url)
+
+	ch := make(chan js.Value)
+	promise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		ch <- args[0]
+		return nil
+	})).Call("catch", js.FuncOf(func(this js.Value, args []js.Value) any {
+		ch <- args[0]
+		return nil
+	}))
+
+	resp := <-ch
+	if resp.Type() != js.TypeObject || !resp.Get("ok").Bool() {
+		statusDiv.Set("innerText", "Failed to load models. Check your API key.")
+		return
+	}
+
+	textCh := make(chan string)
+	resp.Call("text").Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		textCh <- args[0].String()
+		return nil
+	}))
+
+	bodyText := <-textCh
+
+	// Debug: You can see the raw response in the console
+	js.Global().Get("console").Call("log", "Gemini Models Response:", bodyText)
+
+	var modelsResp struct {
+		Models []struct {
+			Name             string   `json:"name"`
+			DisplayName      string   `json:"displayName"`
+			SupportedMethods []string `json:"supportedMethods"`
+		} `json:"models"`
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	if err := json.Unmarshal([]byte(bodyText), &modelsResp); err != nil {
+		statusDiv.Set("innerText", "Error parsing models: "+err.Error())
+		return
+	}
+
+	if modelsResp.Error.Message != "" {
+		statusDiv.Set("innerText", "API Error: "+modelsResp.Error.Message)
+		return
+	}
+
+	// Clear select
+	selectEl.Set("innerHTML", "")
+
+	count := 0
+	for _, m := range modelsResp.Models {
+		// Name is usually "models/gemini-..."
+		shortName := m.Name
+		if len(shortName) > 7 && shortName[:7] == "models/" {
+			shortName = shortName[7:]
+		}
+
+		// Skip non-gemini models for brevity, but keep them if we find nothing else
+		isGemini := (len(shortName) >= 6 && shortName[:6] == "gemini")
+
+		canGenerate := false
+		for _, method := range m.SupportedMethods {
+			if method == "generateContent" {
+				canGenerate = true
+				break
+			}
+		}
+
+		if canGenerate || isGemini {
+			option := doc.Call("createElement", "option")
+			option.Set("value", shortName)
+			displayName := m.DisplayName
+			if displayName == "" {
+				displayName = shortName
+			}
+			option.Set("innerText", displayName)
+
+			if shortName == savedModel || (savedModel == "" && shortName == "gemini-1.5-flash") {
+				option.Set("selected", true)
+			}
+			selectEl.Call("appendChild", option)
+			count++
+		}
+	}
+
+	if count == 0 {
+		// Fallback if no models found via API
+		statusDiv.Set("innerText", "No models found in API. Adding defaults.")
+		for _, def := range []string{"gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"} {
+			option := doc.Call("createElement", "option")
+			option.Set("value", def)
+			option.Set("innerText", def)
+			if def == "gemini-1.5-flash" {
+				option.Set("selected", true)
+			}
+			selectEl.Call("appendChild", option)
+		}
+	} else {
+		statusDiv.Set("innerText", fmt.Sprintf("Found %d compatible models.", count))
+	}
+}
+
+func startAnalysis(apiKey, model string) {
 	doc := js.Global().Get("document")
 
-	// Remove game over overlay if present
-	app.game.isGameOver = false
-
-	doc.Call("getElementById", "popup-analysis").Get("classList").Call("remove", "hidden")
 	doc.Call("getElementById", "analysis-status").Get("classList").Call("remove", "hidden")
-	doc.Call("getElementById", "analysis-status").Set("innerText", "Analyzing game with Gemini AI...")
+	doc.Call("getElementById", "analysis-status").Set("innerText", fmt.Sprintf("Analyzing game with %s...", model))
 	doc.Call("getElementById", "analysis-results").Get("classList").Call("add", "hidden")
 	doc.Call("getElementById", "analysis-results").Set("innerHTML", "")
 
 	pgn := fmt.Sprintf("[Event \"Casual Game\"]\n[Site \"chess.phonax.com\"]\n[Date \"??.??.??\"]\n[White \"Player\"]\n[Black \"Bot\"]\n[Result \"*\"]\n\n%s", app.game.game.String())
 
 	go func() {
-		analysis, err := fetchGeminiAnalysis(apiKey, pgn)
+		analysis, err := fetchGeminiAnalysis(apiKey, model, pgn)
 		if err != nil {
 			doc.Call("getElementById", "analysis-status").Set("innerText", "Error: "+err.Error())
 			return
@@ -78,7 +200,7 @@ type MoveAnalysis struct {
 	Explanation string `json:"explanation"`
 }
 
-func fetchGeminiAnalysis(apiKey, pgn string) (*GeminiAnalysis, error) {
+func fetchGeminiAnalysis(apiKey, model, pgn string) (*GeminiAnalysis, error) {
 	prompt := fmt.Sprintf(`You are a professional chess coach. Analyze the following chess game in PGN format. Identify 2-3 key good moves and 2-3 key bad moves (mistakes or blunders). For each, explain simply why it was good or bad. Finally, give 3 concise tips for the player to improve in their next game.
 
 PGN:
@@ -91,7 +213,7 @@ Format your response ONLY as a JSON object with the following structure:
   "tips": ["tip 1", "tip 2", "tip 3"]
 }`, pgn)
 
-	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey)
 
 	payload := map[string]any{
 		"contents": []map[string]any{
@@ -131,65 +253,79 @@ Format your response ONLY as a JSON object with the following structure:
 	}))
 
 	resp := <-ch
-	if resp.Type() == js.TypeObject {
-		ok := resp.Get("ok")
-		if !ok.IsUndefined() && ok.Bool() {
-			// Read body
-			textPromise := resp.Call("text")
-			textCh := make(chan string)
-			textPromise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
-				textCh <- args[0].String()
-				return nil
-			}))
-
-			bodyText := <-textCh
-
-			var geminiResp struct {
-				Candidates []struct {
-					Content struct {
-						Parts []struct {
-							Text string `json:"text"`
-						} `json:"parts"`
-					} `json:"content"`
-				} `json:"candidates"`
-				Error struct {
-					Message string `json:"message"`
-					Status  string `json:"status"`
-				} `json:"error"`
-			}
-
-			err := json.Unmarshal([]byte(bodyText), &geminiResp)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse Gemini response: %v", err)
-			}
-
-			if geminiResp.Error.Message != "" {
-				return nil, fmt.Errorf("Gemini API Error: %s (%s)", geminiResp.Error.Message, geminiResp.Error.Status)
-			}
-
-			if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
-				return nil, fmt.Errorf("empty response from Gemini")
-			}
-
-			var analysis GeminiAnalysis
-			err = json.Unmarshal([]byte(geminiResp.Candidates[0].Content.Parts[0].Text), &analysis)
-			if err != nil {
-				// Fallback: Gemini might have returned plain text instead of JSON if it ignored the directive
-				return nil, fmt.Errorf("failed to parse analysis JSON. Body: %s", geminiResp.Candidates[0].Content.Parts[0].Text)
-			}
-
-			return &analysis, nil
-		}
-
-		statusText := resp.Get("statusText").String()
-		status := resp.Get("status").Int()
-		if statusText == "" {
-			statusText = "Unknown Error"
-		}
-		return nil, fmt.Errorf("API request failed with status: %d (%s)", status, statusText)
+	if resp.Type() != js.TypeObject {
+		return nil, fmt.Errorf("failed to reach Gemini API: unexpected response type")
 	}
 
-	return nil, fmt.Errorf("failed to reach Gemini API")
+	// Read body
+	textPromise := resp.Call("text")
+	textCh := make(chan string)
+	textPromise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		textCh <- args[0].String()
+		return nil
+	}))
+
+	bodyText := <-textCh
+	status := resp.Get("status").Int()
+
+	if status < 200 || status >= 300 {
+		var geminiErr struct {
+			Error struct {
+				Message string `json:"message"`
+				Status  string `json:"status"`
+			} `json:"error"`
+		}
+		json.Unmarshal([]byte(bodyText), &geminiErr)
+
+		errMsg := geminiErr.Error.Message
+		if errMsg == "" {
+			errMsg = bodyText
+		}
+		if errMsg == "" {
+			errMsg = resp.Get("statusText").String()
+		}
+
+		if status == 404 {
+			return nil, fmt.Errorf("Gemini API Error 404: Model not found. This can happen if the model 'gemini-1.5-flash' is not available in your region or for your API key. (Details: %s)", errMsg)
+		}
+		return nil, fmt.Errorf("Gemini API Error %d: %s", status, errMsg)
+	}
+
+	var geminiResp struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+		Error struct {
+			Message string `json:"message"`
+			Status  string `json:"status"`
+		} `json:"error"`
+	}
+
+	err := json.Unmarshal([]byte(bodyText), &geminiResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse Gemini response: %v", err)
+	}
+
+	if geminiResp.Error.Message != "" {
+		return nil, fmt.Errorf("%s", geminiResp.Error.Message)
+	}
+
+	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("empty response from Gemini")
+	}
+
+	var analysis GeminiAnalysis
+	err = json.Unmarshal([]byte(geminiResp.Candidates[0].Content.Parts[0].Text), &analysis)
+	if err != nil {
+		// Fallback: Gemini might have returned plain text instead of JSON if it ignored the directive
+		return nil, fmt.Errorf("failed to parse analysis JSON. Body: %s", geminiResp.Candidates[0].Content.Parts[0].Text)
+	}
+
+	return &analysis, nil
 }
 
 func displayAnalysis(analysis *GeminiAnalysis) {

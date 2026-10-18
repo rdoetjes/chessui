@@ -182,24 +182,30 @@
         <button id="btn-join-cancel" class="cancel-btn">Cancel</button>
     </div>
 
-    <div id="popup-gemini" class="popup hidden">
-        <h3>Gemini AI Analysis</h3>
-        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px;">To analyze your game with AI, please enter your Gemini API Key. It will be saved in your browser cookies.</p>
-        <div class="control-group">
+    <div id="popup-analysis" class="popup hidden" style="width: 500px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+        <h3 style="margin-top: 0;">Gemini AI Coach</h3>
+        <div class="control-group" style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; flex-shrink: 0;">
             <label>Gemini API Key</label>
-            <input type="password" id="gemini-key" placeholder="Paste your API key here">
+            <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%;">
+                <input type="password" id="gemini-key-inline" placeholder="Paste your API key here" style="flex: 1; min-width: 0;">
+                <button id="btn-refresh-models" style="padding: 5px 12px; margin: 0; font-size: 0.8rem; white-space: nowrap; width: auto; flex-shrink: 0; height: 38px;">Load Models</button>
+            </div>
+            <label>Model</label>
+            <select id="gemini-model-select" style="width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 5px; box-sizing: border-box; height: 38px;">
+                <option value="gemini-1.5-flash">gemini-1.5-flash (Default)</option>
+            </select>
+            <div id="model-status" style="font-size: 0.75rem; color: var(--text-muted);">Enter key and click 'Load Models' if default fails.</div>
         </div>
-        <button id="btn-gemini-ok">OK</button>
-        <button id="btn-gemini-cancel" class="cancel-btn">Cancel</button>
-    </div>
 
-    <div id="popup-analysis" class="popup hidden" style="width: 500px; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column;">
-        <h3 id="analysis-title">Game Analysis</h3>
-        <div id="analysis-content" style="flex: 1; overflow-y: auto; text-align: left; font-size: 0.9rem; line-height: 1.4; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 15px;">
-            <div id="analysis-status">Analyzing moves...</div>
+        <div id="analysis-content" style="flex: 1; overflow-y: auto; text-align: left; font-size: 0.9rem; line-height: 1.4; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 15px; min-height: 0;">
+            <div id="analysis-status">Enter your key above and click 'Start Analysis'.</div>
             <div id="analysis-results" class="hidden"></div>
         </div>
-        <button id="btn-analysis-close">Close</button>
+
+        <div style="display: flex; gap: 10px; flex-shrink: 0;">
+            <button id="btn-start-analysis" style="background: #6b4c9a; flex: 2; margin-top: 0; height: 40px;">Start Analysis</button>
+            <button id="btn-analysis-close" class="cancel-btn" style="flex: 1; margin-top: 0; height: 40px;">Close</button>
+        </div>
     </div>
 
     <script>
