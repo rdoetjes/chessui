@@ -157,10 +157,15 @@ func handleBoardClick(col, row int) {
 			app.game.selectedPos = sq
 		}
 	} else {
-		// Only allow executing moves if it's the player's turn
-		if turn != app.multi.playerColor {
+		// Only allow executing moves if it's the player's turn (in live mode)
+		if app.game.currentViewIndex == -1 && turn != app.multi.playerColor {
 			app.game.selectedPos = chess.NoSquare
 			return
+		}
+
+		// When playing from history, we automatically adopt the side that is moving
+		if app.game.currentViewIndex != -1 {
+			app.multi.playerColor = turn
 		}
 
 		var targetMoves []*chess.Move
@@ -190,7 +195,11 @@ func handleBoardClick(col, row int) {
 }
 
 func checkGameState() {
-	if app.game.game.Outcome() != chess.NoOutcome {
+	// Only set game over if the position is actually terminal.
+	// This prevents PGN [Result] tags from ending the game prematurely
+	// when we are trying to play on from an imported position.
+	status := app.game.game.Position().Status()
+	if status != chess.NoMethod {
 		app.game.isGameOver = true
 	}
 }
