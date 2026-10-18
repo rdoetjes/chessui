@@ -52,6 +52,45 @@ func registerGeminiEvents() {
 		doc.Call("getElementById", "popup-analysis").Get("classList").Call("add", "hidden")
 		return nil
 	}))
+
+	makeDraggable(doc.Call("getElementById", "popup-analysis"), doc.Call("getElementById", "analysis-header"))
+}
+
+func makeDraggable(el js.Value, header js.Value) {
+	var pos1, pos2, pos3, pos4 int
+
+	var onMouseMove js.Func
+	var onMouseUp js.Func
+
+	onMouseMove = js.FuncOf(func(this js.Value, args []js.Value) any {
+		e := args[0]
+		pos1 = pos3 - e.Get("clientX").Int()
+		pos2 = pos4 - e.Get("clientY").Int()
+		pos3 = e.Get("clientX").Int()
+		pos4 = e.Get("clientY").Int()
+
+		el.Get("style").Set("top", fmt.Sprintf("%dpx", el.Get("offsetTop").Int()-pos2))
+		el.Get("style").Set("left", fmt.Sprintf("%dpx", el.Get("offsetLeft").Int()-pos1))
+		return nil
+	})
+
+	onMouseUp = js.FuncOf(func(this js.Value, args []js.Value) any {
+		js.Global().Get("document").Call("removeEventListener", "mousemove", onMouseMove)
+		js.Global().Get("document").Call("removeEventListener", "mouseup", onMouseUp)
+		// We don't release here because we might drag again, but in a more complex app you might manage lifecycle
+		return nil
+	})
+
+	header.Set("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) any {
+		e := args[0]
+		e.Call("preventDefault")
+		pos3 = e.Get("clientX").Int()
+		pos4 = e.Get("clientY").Int()
+
+		js.Global().Get("document").Call("addEventListener", "mousemove", onMouseMove)
+		js.Global().Get("document").Call("addEventListener", "mouseup", onMouseUp)
+		return nil
+	}))
 }
 
 func refreshModels(apiKey string) {
@@ -154,7 +193,7 @@ func refreshModels(apiKey string) {
 	if count == 0 {
 		// Fallback if no models found via API
 		statusDiv.Set("innerText", "No models found in API. Adding defaults.")
-		for _, def := range []string{"gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"} {
+		for _, def := range []string{"gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"} {
 			option := doc.Call("createElement", "option")
 			option.Set("value", def)
 			option.Set("innerText", def)
@@ -164,7 +203,7 @@ func refreshModels(apiKey string) {
 			selectEl.Call("appendChild", option)
 		}
 	} else {
-		statusDiv.Set("innerText", fmt.Sprintf("Found %d compatible models.", count))
+		statusDiv.Set("innerText", fmt.Sprintf("Found %d models. Select one and click 'Start Analysis'.", count))
 	}
 }
 
@@ -286,7 +325,7 @@ Format your response ONLY as a JSON object with the following structure:
 		}
 
 		if status == 404 {
-			return nil, fmt.Errorf("Gemini API Error 404: Model not found. This can happen if the model 'gemini-1.5-flash' is not available in your region or for your API key. (Details: %s)", errMsg)
+			return nil, fmt.Errorf("Gemini API Error 404: Model '%s' not found or not available for your account. (Details: %s)", model, errMsg)
 		}
 		return nil, fmt.Errorf("Gemini API Error %d: %s", status, errMsg)
 	}

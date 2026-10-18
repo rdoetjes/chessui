@@ -182,29 +182,36 @@
         <button id="btn-join-cancel" class="cancel-btn">Cancel</button>
     </div>
 
-    <div id="popup-analysis" class="popup hidden" style="width: 500px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
-        <h3 style="margin-top: 0;">Gemini AI Coach</h3>
-        <div class="control-group" style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; flex-shrink: 0;">
-            <label>Gemini API Key</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%;">
-                <input type="password" id="gemini-key-inline" placeholder="Paste your API key here" style="flex: 1; min-width: 0;">
-                <button id="btn-refresh-models" style="padding: 5px 12px; margin: 0; font-size: 0.8rem; white-space: nowrap; width: auto; flex-shrink: 0; height: 38px;">Load Models</button>
+    <div id="popup-analysis" class="popup hidden" style="width: 500px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; cursor: default;">
+        <!-- Draggable Header -->
+        <div id="analysis-header" style="padding: 12px 20px; background: var(--panel-color); border-bottom: 2px solid var(--accent-color); cursor: move; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <h3 style="margin: 0; font-size: 1.1rem;">Gemini AI Coach</h3>
+            <div style="font-size: 0.8rem; color: var(--text-muted); opacity: 0.7;">(Drag to move)</div>
+        </div>
+
+        <div style="padding: 20px; display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+            <div class="control-group" style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; flex-shrink: 0;">
+                <label>Gemini API Key</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%;">
+                    <input type="password" id="gemini-key-inline" placeholder="Paste your API key here" style="flex: 1; min-width: 0;">
+                    <button id="btn-refresh-models" style="padding: 5px 12px; margin: 0; font-size: 0.8rem; white-space: nowrap; width: auto; flex-shrink: 0; height: 38px;">Load Models</button>
+                </div>
+                <label>Model</label>
+                <select id="gemini-model-select" style="width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 5px; box-sizing: border-box; height: 38px;">
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (Default)</option>
+                </select>
+                <div id="model-status" style="font-size: 0.75rem; color: var(--text-muted);">Enter key and click 'Load Models' if default fails.</div>
             </div>
-            <label>Model</label>
-            <select id="gemini-model-select" style="width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 5px; box-sizing: border-box; height: 38px;">
-                <option value="gemini-1.5-flash">gemini-1.5-flash (Default)</option>
-            </select>
-            <div id="model-status" style="font-size: 0.75rem; color: var(--text-muted);">Enter key and click 'Load Models' if default fails.</div>
-        </div>
 
-        <div id="analysis-content" style="flex: 1; overflow-y: auto; text-align: left; font-size: 0.9rem; line-height: 1.4; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 15px; min-height: 0;">
-            <div id="analysis-status">Enter your key above and click 'Start Analysis'.</div>
-            <div id="analysis-results" class="hidden"></div>
-        </div>
+            <div id="analysis-content" style="flex: 1; overflow-y: auto; text-align: left; font-size: 0.9rem; line-height: 1.4; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 15px; min-height: 0;">
+                <div id="analysis-status">Enter your key above and click 'Start Analysis'.</div>
+                <div id="analysis-results" class="hidden"></div>
+            </div>
 
-        <div style="display: flex; gap: 10px; flex-shrink: 0;">
-            <button id="btn-start-analysis" style="background: #6b4c9a; flex: 2; margin-top: 0; height: 40px;">Start Analysis</button>
-            <button id="btn-analysis-close" class="cancel-btn" style="flex: 1; margin-top: 0; height: 40px;">Close</button>
+            <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                <button id="btn-start-analysis" style="background: #6b4c9a; flex: 2; margin-top: 0; height: 40px;">Start Analysis</button>
+                <button id="btn-analysis-close" class="cancel-btn" style="flex: 1; margin-top: 0; height: 40px;">Close</button>
+            </div>
         </div>
     </div>
 
